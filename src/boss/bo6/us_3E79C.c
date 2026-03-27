@@ -979,8 +979,8 @@ static u8 BO6_PrimDecreaseBrightness(Primitive* prim, u8 amount) {
 
     isEnd = 0;
     colorPtr = &prim->r0;
-    for (i = 0; i < 4;
-         colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0), i++) {
+    for (i = 0; i < 4; colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0),
+        i++) {
         for (j = 0; j < 3; j++) {
             channelPtr = &colorPtr[j];
             *channelPtr -= amount;
@@ -1263,8 +1263,8 @@ void BO6_RicEntityCrashReboundStone(Entity* entity) {
             entity->ext.timer.t = 0;
             entity->posX.val = FIX(128);
             entity->posY.val = 0;
-            OVL_EXPORT(RicCreateEntFactoryFromEntity)(
-                entity, FACTORY(BP_EMBERS, 1), 0);
+            OVL_EXPORT(RicCreateEntFactoryFromEntity)
+            (entity, FACTORY(BP_EMBERS, 1), 0);
             entity->step++;
         }
         break;
@@ -1273,8 +1273,8 @@ void BO6_RicEntityCrashReboundStone(Entity* entity) {
         if (entity->ext.timer.t > 15) {
             DestroyEntity(entity);
             g_Ric.unk4E = 1;
-            OVL_EXPORT(RicCreateEntFactoryFromEntity)(
-                entity, BP_CRASH_REBOUND_STONE_EXPLOSION, 0);
+            OVL_EXPORT(RicCreateEntFactoryFromEntity)
+            (entity, BP_CRASH_REBOUND_STONE_EXPLOSION, 0);
         }
         break;
     }
