@@ -34,8 +34,52 @@ extern u8 D_us_80181524[];
 extern AnimationFrame D_us_80182170[];
 extern AnimationFrame D_us_801821C0[];
 extern s32 D_80072F2C;
+extern AnimationFrame D_us_80181F1C[];
+extern AnimationFrame D_us_801823C8[];
+extern s32 D_us_80181278;
+void CreateEntityFromCurrentEntity(u16 entityId, Entity* entity);
+extern PfnEntityUpdate D_us_8018158C[];
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
+void func_us_801B9144(void) {
+    switch (RIC.step_s) {
+    case 0:
+        BO6_RicSetAnimation(D_us_80181F1C);
+        g_api.PlaySfx(0x82B);
+        if (RIC.posX.i.hi < 0x80) {
+            RIC.facingLeft = 0;
+        } else {
+            RIC.facingLeft = 1;
+        }
+        RIC.step_s++;
+    case 1:
+        D_us_80181278 = 0x14;
+        CreateEntityFromCurrentEntity(E_ID_17, &g_Entities[0xC8]);
+        g_Entities[0xC8].params = 1;
+        RIC.step_s++;
+        break;
+    case 2:
+        if (D_us_80181278 == 0x1E) {
+            BO6_RicSetAnimation(D_us_801823C8);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_36, 1), 0);
+            RIC.step_s++;
+        }
+        break;
+    case 3:
+        if (RIC.animCurFrame == 0xB5 && RIC.poseTimer == 1) {
+            BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_35, 0);
+            g_api.PlaySfx(0x62F);
+        }
+        if (RIC.poseTimer < 0) {
+            D_us_80181278 = 0x28;
+            BO6_RicSetStand(0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x45), 0);
+            g_Ric.timers[PL_T_POISON] = 0x800;
+        }
+        break;
+    }
+}
 
 void func_us_801B9338(void) {}
 
@@ -47,7 +91,7 @@ void func_us_801B9340(void) {
         func_us_801B9ACC(-0xF000);
         RIC.anim = D_us_8018221C;
         g_api.PlaySfx(0x83E);
-        g_Ric.unk40 = 0x8166;
+        g_Ric.damagePalette = 0x8166;
         g_Ric.timers[PL_T_2] = 8;
         BO6_RicCreateEntFactoryFromEntity(
             g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x58), 0);
