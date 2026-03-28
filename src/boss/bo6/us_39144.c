@@ -7,6 +7,7 @@ extern AnimationFrame D_us_80182048[];
 extern AnimationFrame D_us_80182050[];
 extern AnimationFrame D_us_80182058[];
 extern AnimationFrame D_us_801822D8[];
+extern AnimationFrame D_us_801821F8[];
 extern AnimationFrame D_us_80182304[];
 extern AnimationFrame D_us_80182310[];
 
@@ -155,7 +156,15 @@ void BO6_RicSetStand(s32 velocityX) {
     BO6_RicSetAnimation(ric_anim_stand);
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9D74);
+void func_us_801B9D74(void) {
+    g_Ric.unk44 = 0;
+    BO6_RicSetStep(PL_S_RUN);
+    BO6_RicSetAnimation(D_us_801821F8);
+    BO6_RicSetSpeedX(0x24000);
+    g_Ric.timers[PL_T_RUN] = 40;
+    RIC.velocityY = 0;
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, FACTORY(BP_SMOKE_PUFF, 5), 0);
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9DE4);
 
