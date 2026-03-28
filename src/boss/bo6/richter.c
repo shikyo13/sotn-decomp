@@ -17,6 +17,7 @@ extern AnimationFrame D_us_80182048[];
 extern AnimationFrame D_us_80182068[];
 extern AnimationFrame D_us_80182110[];
 extern AnimationFrame D_us_801822C0[];
+extern AnimationFrame D_us_801820E4[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -404,9 +405,124 @@ void BO6_RicStepThrowDaggers(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepSlide);
+void BO6_RicStepSlide(void) {
+    s32 isTouchingGround = 0;
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepSlideKick);
+    if (RIC.facingLeft == 0 && g_Ric.vram_flag & TOUCHING_R_WALL) {
+        isTouchingGround = 1;
+    }
+    if (RIC.facingLeft && g_Ric.vram_flag & TOUCHING_L_WALL) {
+        isTouchingGround = 1;
+    }
+    if (RIC.posX.i.hi >= STAGE_WIDTH - 4 && RIC.facingLeft == 0) {
+        isTouchingGround = 1;
+    }
+    if (RIC.posX.i.hi <= 4 && RIC.facingLeft) {
+        isTouchingGround = 1;
+    }
+    if ((RIC.facingLeft == 0 &&
+         g_Player.colFloor[2].effects & EFFECT_UNK_8000) ||
+        (RIC.facingLeft && g_Player.colFloor[3].effects & EFFECT_UNK_8000)) {
+        isTouchingGround = 1;
+    }
+    if (isTouchingGround && RIC.pose < 6) {
+        RIC.pose = 6;
+        if (RIC.velocityX > 0x10000) {
+            RIC.velocityX = 0x20000;
+        }
+        if (RIC.velocityX < (s32)0xFFFF0000) {
+            RIC.velocityX = (s32)0xFFFE0000;
+        }
+        BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_SKID_SMOKE, 0);
+    }
+    if (RIC.pose < 5) {
+        if (BO6_RicCheckInput(CHECK_FALL | CHECK_CRASH)) {
+            return;
+        }
+        if (g_Ric.padTapped & PAD_CROSS) {
+            RIC.posY.i.hi -= 4;
+            BO6_RicSetSlideKick();
+            return;
+        }
+    } else if (RIC.pose < 7) {
+        if (BO6_RicCheckInput(CHECK_SLIDE | CHECK_FALL | CHECK_CRASH)) {
+            return;
+        }
+    } else if (BO6_RicCheckInput(
+                   CHECK_SLIDE | CHECK_FALL | CHECK_FACING | CHECK_CRASH)) {
+        return;
+    }
+
+    DecelerateX(0x2000);
+    switch (RIC.step_s) {
+    case 0:
+        if (!(g_GameTimer & 3) && RIC.pose < 6 && RIC.pose > 2) {
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_SLIDE, 2), 0);
+        }
+        if (RIC.pose == 6 && RIC.poseTimer == 1) {
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, BP_SKID_SMOKE, 0);
+        }
+        if (RIC.poseTimer < 0) {
+            BO6_RicSetCrouch(0, RIC.velocityX);
+        }
+        break;
+    }
+}
+
+void BO6_RicStepSlideKick(void) {
+    if (g_Ric.padPressed & PAD_SQUARE && g_Ric.unk44 & 0x80) {
+        RIC.step = PL_S_JUMP;
+        BO6_RicSetAnimation(D_us_801820E4);
+        BO6_RicSetSpeedX((s32)0xFFFE8000);
+        RIC.velocityY = (s32)0xFFFC8000;
+        RIC.step_s = 2;
+        g_Ric.unk44 = (g_Ric.unk44 | 0xA) & ~4;
+        return;
+    }
+    DecelerateX(0x1000);
+    RIC.velocityY += 0x1000;
+    if (g_Ric.vram_flag & TOUCHING_GROUND) {
+        g_CurrentEntity->velocityX /= 2;
+        BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_SKID_SMOKE, 0);
+        RIC.facingLeft++;
+        RIC.facingLeft &= 1;
+        BO6_RicSetCrouch(3, RIC.velocityX);
+        g_api.PlaySfx(SFX_STOMP_SOFT_A);
+        return;
+    }
+    if (RIC.velocityX < 0) {
+        if (g_Ric.padPressed & PAD_RIGHT) {
+            DecelerateX(0x2000);
+        }
+        if (RIC.velocityX > (s32)0xFFFD0000 ||
+            (g_Ric.vram_flag & TOUCHING_L_WALL)) {
+            RIC.facingLeft++;
+            RIC.facingLeft &= 1;
+            RIC.velocityX /= 2;
+            BO6_RicSetAnimation(D_us_80182310);
+            g_Ric.unk44 = 0xA;
+            RIC.step_s = 2;
+            RIC.step = PL_S_JUMP;
+        }
+    }
+    if (RIC.velocityX > 0) {
+        if (g_Ric.padPressed & PAD_LEFT) {
+            DecelerateX(0x2000);
+        }
+        if (RIC.velocityX < 0x30000 ||
+            (g_Ric.vram_flag & TOUCHING_R_WALL)) {
+            RIC.facingLeft++;
+            RIC.facingLeft &= 1;
+            RIC.velocityX /= 2;
+            BO6_RicSetAnimation(D_us_80182310);
+            g_Ric.unk44 = 0xA;
+            RIC.step_s = 2;
+            RIC.step = PL_S_JUMP;
+        }
+    }
+}
 
 void BO6_RicStepBladeDash(void) {
     DecelerateX(0x1C00);
