@@ -124,9 +124,147 @@ void func_us_801B9340(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B94CC);
+extern u8 D_us_80181284[];
+extern u8 D_us_80181298[];
+extern u8 D_us_801812A8[];
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B96F4);
+// InitRicAfterImage analog
+void func_us_801B94CC(void) {
+    byte pad[40];
+    Primitive* prim;
+    s32 i;
+
+    if (g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+            .ext.afterImage.disableFlag) {
+        return;
+    }
+    if ((g_Ric.padTapped & GAMEBUTTONS) ||
+        ((g_Ric.padHeld ^ g_Ric.padPressed) & g_Ric.padHeld & GAMEBUTTONS) ||
+        (RIC.velocityY > 0x8000)) {
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+            .ext.afterImage.index = 0;
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+            .ext.afterImage.timer = 0;
+    } else {
+        if (g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .ext.afterImage.index >= MaxAfterImageIndex) {
+            return;
+        }
+        if (g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .ext.afterImage.timer == 0) {
+            g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .ext.afterImage.timer =
+                D_us_80181284[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                                  .ext.afterImage.index];
+        }
+        if (--g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                 .ext.afterImage.timer == 0) {
+            g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .ext.afterImage.index++;
+            g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .ext.afterImage.timer =
+                D_us_80181284[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                                  .ext.afterImage.index];
+        }
+    }
+    if (g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].pose) {
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].pose--;
+        return;
+    }
+    prim = &g_PrimBuf[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                          .primIndex];
+    for (prim =
+             &g_PrimBuf[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                            .primIndex],
+        i = 0;
+         prim != NULL; i++, prim = prim->next) {
+        if (i == g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].entityId) {
+            prim->r0 = prim->g0 = prim->b0 = 0x80;
+            prim->x0 = RIC.posX.i.hi;
+            prim->y0 = RIC.posY.i.hi;
+            prim->x1 = RIC.animCurFrame;
+            prim->y1 = 0;
+            prim->x2 = RIC.facingLeft;
+            prim->y2 = RIC.palette;
+        }
+    }
+    g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].pose = 2;
+    g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].entityId++;
+    if (g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].entityId >=
+        MaxAfterImages) {
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].entityId = 0;
+    }
+}
+
+// DrawRicAfterImage analog
+void func_us_801B96F4(void) {
+    byte pad[0x28];
+    Primitive* prim;
+    PlayerDraw* draw;
+    s32 i;
+    u8 var_s3;
+    u8 var_s5;
+    u8 resetAnim;
+
+    resetAnim =
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+            .ext.afterImage.resetFlag;
+    prim = &g_PrimBuf[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                          .primIndex];
+    i = 0;
+    draw = &g_PlayerDraw[9];
+    var_s5 =
+        D_us_80181298[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                          .ext.afterImage.index];
+    var_s3 =
+        D_us_801812A8[g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                          .ext.afterImage.index];
+    while (prim != NULL) {
+        if (prim->r0 > var_s3) {
+            prim->r0 -= var_s5;
+        }
+        if (prim->r0 < 112 && prim->b0 < 240) {
+            prim->b0 += 6;
+        }
+        if (prim->r0 < 88) {
+            prim->y1 = 16;
+        } else {
+            prim->y1 = 0;
+        }
+        if (prim->r0 <= var_s3) {
+            prim->x1 = 0;
+        }
+        if ((i ^ g_Timer) & 1) {
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .posX.i.hi = prim->x0;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .posY.i.hi = prim->y0;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .animCurFrame = prim->x1;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1].blendMode =
+                prim->y1;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .facingLeft = prim->x2;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1].palette =
+                prim->y2;
+            g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                .zPriority = RIC.zPriority - 2;
+            if (resetAnim) {
+                g_Entities[i / 2 + STAGE_ENTITY_START + E_AFTERIMAGE_1]
+                    .animCurFrame = 0;
+                prim->x1 = 0;
+            }
+
+            draw->r0 = draw->r1 = draw->r2 = draw->r3 = draw->g0 =
+                draw->g1 = draw->g2 = draw->g3 = prim->r0;
+            draw->b0 = draw->b1 = draw->b2 = draw->b3 = prim->b0;
+            draw->enableColorBlend = true;
+            draw++;
+        }
+        i++;
+        prim = prim->next;
+    }
+}
 
 void BO6_RicSetStep(s16 step) {
     RIC.step = step;
