@@ -13,7 +13,28 @@ extern s32 D_us_801CF3E4;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4EAC);
+void func_us_801B4EAC(void) {
+    g_Ric.unk04 = g_Ric.vram_flag;
+    g_Ric.vram_flag = 0;
+    RIC.posY.val += RIC.velocityY;
+    RIC.posX.val += RIC.velocityX;
+    if (RIC.posY.val < (s32)0xB30000) {
+        RIC.posY.val = 0xB30000;
+        g_Ric.vram_flag = TOUCHING_GROUND;
+    }
+    if (RIC.posY.val > 0x280000) {
+        RIC.posY.val = 0x280000;
+        g_Ric.vram_flag |= TOUCHING_CEILING;
+    }
+    if (RIC.posX.val > (s32)0xF80000) {
+        RIC.posX.val = 0xF80000;
+        g_Ric.vram_flag |= TOUCHING_R_WALL;
+    }
+    if (RIC.posX.val < 0x80000) {
+        RIC.posX.val = 0x80000;
+        g_Ric.vram_flag |= TOUCHING_L_WALL;
+    }
+}
 
 void BO6_CheckBladeDashInput(void) {
     if (RIC.step == PL_S_STAND || RIC.step == PL_S_WALK ||
