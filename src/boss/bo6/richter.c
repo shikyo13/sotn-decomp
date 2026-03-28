@@ -3,6 +3,7 @@
 
 extern s32 D_us_801CF3C8;
 extern s32 D_us_801CF3CC;
+extern AnimationFrame D_us_801820B0[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -45,7 +46,22 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepRun);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepJump);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepFall);
+void BO6_RicStepFall(void) {
+    if (BO6_RicCheckInput(0x9009)) {
+        return;
+    }
+    DecelerateX(0x1000);
+    if (RIC.step_s) {
+        return;
+    }
+    if (g_Ric.timers[PL_T_5] && (g_Ric.padTapped & PAD_CROSS)) {
+        func_us_801B9E70();
+        return;
+    }
+    if (BO6_RicCheckFacing()) {
+        BO6_RicSetSpeedX(0xC000);
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepCrouch);
 
@@ -68,7 +84,20 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepHit);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepDead);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepStandInAir);
+void BO6_RicStepStandInAir(void) {
+    if (!RIC.step_s) {
+        RIC.velocityY += 0x3800;
+        if (RIC.velocityY > 0) {
+            RIC.velocityY = 0;
+            RIC.step_s = 1;
+        }
+    } else if (g_Ric.unk4E) {
+        g_Ric.unk46 = 0;
+        BO6_RicSetStep(PL_S_JUMP);
+        BO6_RicSetAnimation(D_us_801820B0);
+        g_Ric.unk44 = 0;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepEnableFlameWhip);
 

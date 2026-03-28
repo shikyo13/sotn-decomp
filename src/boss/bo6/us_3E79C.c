@@ -84,7 +84,14 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashHydroStorm);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_DebugShowWaitInfo);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_DebugInputWait);
+void BO6_DebugInputWait(s32 arg0) {
+    while (PadRead(0)) {
+        BO6_DebugShowWaitInfo(arg0);
+    }
+    while (!PadRead(0)) {
+        BO6_DebugShowWaitInfo(arg0);
+    }
+}
 
 s32 OVL_EXPORT(RicCheckHolyWaterCollision)(s16 height, s16 width) {
     Collider collider;
@@ -755,7 +762,30 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnReboundStone);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnThrownVibhuti);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_PrimDecreaseBrightness);
+u8 BO6_PrimDecreaseBrightness(Primitive* prim, u8 amount) {
+    s32 i;
+    s32 j;
+    u8* colorPtr;
+    u8* channelPtr;
+    u8 isEnd;
+
+    isEnd = 0;
+    colorPtr = &prim->r0;
+    for (i = 0; i < 4;
+         colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0), i++) {
+        for (j = 0; j < 3; j++) {
+            channelPtr = &colorPtr[j];
+            *channelPtr -= amount;
+
+            if (*channelPtr < 16) {
+                *channelPtr = 16;
+            } else {
+                isEnd |= 1;
+            }
+        }
+    }
+    return isEnd;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnAgunea);
 
@@ -1002,7 +1032,16 @@ void func_us_801CA340(Entity* self) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_GetAguneaLightningAngle);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_AguneaShuffleParams);
+void BO6_AguneaShuffleParams(s32 bufSize, s32* buf) {
+    s32 i, idx, swapTemp;
+
+    for (i = bufSize - 1; i > 0; i--) {
+        idx = rand() % bufSize;
+        swapTemp = buf[i];
+        buf[i] = buf[idx];
+        buf[idx] = swapTemp;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityAguneaLightning);
 
