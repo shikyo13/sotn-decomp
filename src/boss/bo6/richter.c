@@ -5,6 +5,7 @@ extern s32 D_us_801CF3C8;
 extern s32 D_us_801CF3CC;
 extern AnimationFrame D_us_801820B0[];
 extern s32 D_us_801D07F8;
+extern AnimationFrame D_us_80181F24[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -43,7 +44,30 @@ void BO6_RicStepWalk(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepRun);
+void BO6_RicStepRun(void) {
+    g_Ric.timers[PL_T_8] = 8;
+    g_Ric.timers[PL_T_CURSE] = 8;
+    if (BO6_RicCheckInput(0x305C)) {
+        return;
+    }
+    DecelerateX(0x2000);
+    if (!BO6_RicCheckFacing()) {
+        BO6_RicSetStand(0);
+        if (g_Ric.timers[PL_T_RUN]) {
+            RIC.velocityX = 0;
+            return;
+        }
+        if (g_Ric.vram_flag & 0xC) {
+            return;
+        }
+        BO6_RicSetAnimation(D_us_80181F24);
+        BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_SKID_SMOKE, 0);
+        return;
+    }
+    if (!RIC.step_s) {
+        BO6_RicSetSpeedX(0x24000);
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepJump);
 
@@ -100,7 +124,20 @@ void BO6_RicStepStandInAir(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepEnableFlameWhip);
+void BO6_RicStepEnableFlameWhip(void) {
+    if (RIC.animCurFrame == 181 && RIC.poseTimer == 1) {
+        BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_35, 0);
+        g_api.PlaySfx(SFX_WEAPON_APPEAR);
+    }
+
+    if (RIC.poseTimer < 0) {
+        BO6_RicSetStand(0);
+        g_Ric.unk46 = 0;
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x45), 0);
+        g_Ric.timers[PL_T_POISON] = 0x800;
+    }
+}
 
 void BO6_RicStepHydrostorm(void) {
     if (RIC.poseTimer < 0) {
