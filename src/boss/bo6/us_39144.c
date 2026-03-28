@@ -18,7 +18,9 @@ extern AnimationFrame D_us_80182324[];
 extern AnimationFrame D_us_80182360[];
 extern EInit D_us_8018043C;
 extern EInit D_us_80180448;
+extern AnimationFrame D_us_80181554[];
 extern AnimationFrame D_us_80181A40[];
+extern s32 D_us_801D084C;
 extern EInit D_us_80180424;
 extern EInit D_us_80180430;
 
@@ -355,7 +357,44 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BB5BC);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityHitByHoly);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityHitByDark);
+void BO6_RicEntityHitByDark(Entity* entity) {
+    switch (entity->step) {
+    case 0:
+        entity->flags =
+            FLAG_UNK_20000 | FLAG_UNK_100000 | FLAG_POS_CAMERA_LOCKED;
+        entity->unk5A = 0x79;
+        entity->animSet = ANIMSET_DRA(14);
+        entity->zPriority = RIC.zPriority + 2;
+        entity->palette = 0x819F;
+        if (D_us_801D084C & 1) {
+            entity->blendMode = BLEND_TRANSP | BLEND_QUARTER;
+        } else {
+            entity->blendMode = BLEND_TRANSP;
+        }
+        D_us_801D084C++;
+        entity->opacity = 0xFF;
+        entity->drawFlags =
+            ENTITY_SCALEX | ENTITY_SCALEY | ENTITY_MASK_R | ENTITY_MASK_G;
+        entity->scaleX = entity->scaleY = 0x40;
+        entity->anim = D_us_80181554;
+        entity->posY.i.hi += (rand() % 35) - 15;
+        entity->posX.i.hi += (rand() % 20) - 10;
+        entity->velocityY = -0x6000 - (rand() & 0x3FFF);
+        entity->step++;
+        break;
+    case 1:
+        if (entity->opacity > 16) {
+            entity->opacity -= 8;
+        }
+        entity->posY.val += entity->velocityY;
+        entity->scaleX += 8;
+        entity->scaleY += 8;
+        if (entity->poseTimer < 0) {
+            DestroyEntity(entity);
+        }
+        break;
+    }
+}
 
 void func_us_801BBBC0(void) {}
 
