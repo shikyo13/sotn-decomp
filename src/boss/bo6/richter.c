@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo6.h"
 
+extern s32 D_us_801CF3C8;
+extern s32 D_us_801CF3CC;
+
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4EAC);
@@ -11,7 +14,10 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_CheckHighJumpInput);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicMain);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B5A14);
+void func_us_801B5A14(s32 arg0) {
+    D_us_801CF3C8 = arg0;
+    D_us_801CF3CC = 0;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", RichterThinking);
 
@@ -21,7 +27,19 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", EntityRichter);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepStand);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepWalk);
+void BO6_RicStepWalk(void) {
+    if (BO6_RicCheckInput(0x305C)) {
+        return;
+    }
+    DecelerateX(0x2000);
+    if (!BO6_RicCheckFacing()) {
+        BO6_RicSetStand(0);
+        return;
+    }
+    if (!RIC.step_s) {
+        BO6_RicSetSpeedX(0x14000);
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepRun);
 
@@ -31,9 +49,20 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepFall);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepCrouch);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicResetPose);
+void BO6_RicResetPose(void) {
+    RIC.pose = RIC.poseTimer = 0;
+    g_Ric.unk44 = 0;
+    g_Ric.unk46 = 0;
+    RIC.drawFlags &= ~ENTITY_ROTATE;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B77D8);
+void func_us_801B77D8(void) {
+    if (RIC.posX.i.hi - PLAYER.posX.i.hi <= 0) {
+        RIC.entityRoomIndex = 0;
+    } else {
+        RIC.entityRoomIndex = 1;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepHit);
 
@@ -43,9 +72,19 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepStandInAir);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepEnableFlameWhip);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepHydrostorm);
+void BO6_RicStepHydrostorm(void) {
+    if (RIC.poseTimer < 0) {
+        BO6_RicSetStand(0);
+        g_Ric.unk46 = 0;
+    }
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepGenericSubwpnCrash);
+void BO6_RicStepGenericSubwpnCrash(void) {
+    if (g_Ric.unk4E) {
+        BO6_RicSetStand(0);
+        g_Ric.unk46 = 0;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepThrowDaggers);
 
