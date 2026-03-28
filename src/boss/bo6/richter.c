@@ -13,6 +13,10 @@ extern s32 D_us_801CF3E4;
 extern AnimationFrame D_us_80181F1C[];
 extern AnimationFrame D_us_80182130[];
 extern AnimationFrame D_us_801822B8[];
+extern AnimationFrame D_us_80182048[];
+extern AnimationFrame D_us_80182068[];
+extern AnimationFrame D_us_80182110[];
+extern AnimationFrame D_us_801822C0[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -232,7 +236,89 @@ void BO6_RicStepFall(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepCrouch);
+void BO6_RicStepCrouch(void) {
+    if (BO6_RicCheckInput(0x4105C)) {
+        return;
+    }
+    DecelerateX(0x2000);
+    switch (RIC.step_s) {
+    case 0:
+        if (!(g_Ric.padPressed & PAD_DOWN)) {
+            BO6_RicSetAnimation(D_us_80182068);
+            RIC.step_s = 2;
+            return;
+        }
+        break;
+    case 1:
+        if (!(g_Ric.padPressed & PAD_DOWN)) {
+            if (BO6_RicCheckFacing()) {
+                func_us_801B9DE4(0);
+                return;
+            }
+            RIC.anim = D_us_80182068;
+            RIC.step_s = 2;
+            RIC.poseTimer = 1;
+            RIC.pose = 2 - RIC.pose;
+            break;
+        }
+    case 4:
+        if (RIC.poseTimer != -1) {
+            return;
+        }
+        BO6_RicSetAnimation(D_us_80182048);
+        RIC.step_s = 0;
+        break;
+    case 2:
+        if (BO6_RicCheckFacing()) {
+            func_us_801B9DE4(0);
+            return;
+        }
+        if (RIC.poseTimer == -1) {
+            BO6_RicSetStand(0);
+            return;
+        }
+        break;
+    case 3:
+        if (RIC.poseTimer < 0) {
+            BO6_RicSetAnimation(D_us_80182048);
+            RIC.step_s = 0;
+            return;
+        }
+        break;
+    case 0x40:
+        BO6_DisableAfterImage(1, 1);
+        if (RIC.pose < 3) {
+            BO6_RicCheckFacing();
+            if (!(g_Ric.padPressed & PAD_DOWN)) {
+                RIC.step = PL_S_STAND;
+                RIC.anim = D_us_80182110;
+                return;
+            }
+        }
+        if (RIC.poseTimer < 0) {
+            if (g_Ric.padPressed & PAD_SQUARE) {
+                RIC.step_s++;
+                g_Ric.unk46 = 2;
+                BO6_RicSetAnimation(D_us_801822C0);
+                BO6_RicCreateEntFactoryFromEntity(
+                    g_CurrentEntity, BP_ARM_BRANDISH_WHIP, 0);
+                return;
+            }
+            g_Ric.unk46 = 0;
+            RIC.step_s = 0;
+            BO6_RicSetAnimation(D_us_80182048);
+        }
+        break;
+    case 0x41:
+        BO6_DisableAfterImage(1, 1);
+        if (!(g_Ric.padPressed & PAD_SQUARE)) {
+            g_Ric.unk46 = 0;
+            RIC.step_s = 0;
+            BO6_RicSetAnimation(D_us_80182048);
+        }
+        break;
+    }
+}
 
 void BO6_RicResetPose(void) {
     RIC.pose = RIC.poseTimer = 0;
