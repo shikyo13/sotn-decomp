@@ -82,9 +82,27 @@ INCLUDE_ASM(
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashHydroStorm);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_DebugShowWaitInfo);
+extern s32 D_us_801D087C;
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_DebugInputWait);
+void BO6_DebugShowWaitInfo(const char* msg) {
+    g_CurrentBuffer = g_CurrentBuffer->next;
+    FntPrint(msg);
+    if (D_us_801D087C++ & 4) {
+        FntPrint("\no\n");
+    }
+    DrawSync(0);
+    VSync(0);
+    PutDrawEnv(&g_CurrentBuffer->draw);
+    PutDispEnv(&g_CurrentBuffer->disp);
+    FntFlush(-1);
+}
+
+void BO6_DebugInputWait(const char* msg) {
+    while (PadRead(0))
+        BO6_DebugShowWaitInfo(msg);
+    while (PadRead(0) == 0)
+        BO6_DebugShowWaitInfo(msg);
+}
 
 s32 OVL_EXPORT(RicCheckHolyWaterCollision)(s16 height, s16 width) {
     Collider collider;
@@ -733,15 +751,52 @@ void OVL_EXPORT(RicEntityCrashAxe)(Entity* self) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnKnife);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_ReboundStoneBounce1);
+void BO6_ReboundStoneBounce1(s16 bounceAngle) {
+    g_CurrentEntity->ext.reboundStone.stoneAngle =
+        (bounceAngle * 2) - g_CurrentEntity->ext.reboundStone.stoneAngle;
+    if (g_CurrentEntity->ext.reboundStone.unk82 == 0) {
+        g_CurrentEntity->ext.reboundStone.unk80++;
+        g_CurrentEntity->ext.reboundStone.unk82++;
+    }
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_ReboundStoneBounce2);
+void BO6_ReboundStoneBounce2(s16 bounceAngle) {
+    if (g_CurrentEntity->ext.reboundStone.unk82 == 0) {
+        g_CurrentEntity->ext.reboundStone.stoneAngle =
+            (bounceAngle * 2) - g_CurrentEntity->ext.reboundStone.stoneAngle;
+        g_CurrentEntity->ext.reboundStone.unk80++;
+        g_CurrentEntity->ext.reboundStone.unk82++;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnReboundStone);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnThrownVibhuti);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_PrimDecreaseBrightness);
+u8 BO6_PrimDecreaseBrightness(Primitive* prim, u8 amount) {
+    s32 i;
+    s32 j;
+    u8* colorPtr;
+    u8* channelPtr;
+    u8 isEnd;
+
+    isEnd = 0;
+    colorPtr = &prim->r0;
+    for (i = 0; i < 4; colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0),
+        i++) {
+        for (j = 0; j < 3; j++) {
+            channelPtr = &colorPtr[j];
+            *channelPtr -= amount;
+
+            if (*channelPtr < 16) {
+                *channelPtr = 16;
+            } else {
+                isEnd |= 1;
+            }
+        }
+    }
+    return isEnd;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnAgunea);
 
@@ -986,9 +1041,37 @@ void func_us_801CA340(Entity* self) {
     DestroyEntity(self);
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_GetAguneaLightningAngle);
+s16 BO6_GetAguneaLightningAngle(s16* arg0, s16 arg1, s16 arg2, s16* arg3) {
+    arg1 += rand() % 256 - 0x80;
+    *arg3 = (rand() % 48) + 0x10;
+    arg0[0] = arg0[1];
+    arg0[2] = arg0[3];
+    if (arg2) {
+        arg0[1] += (rcos(arg1) * *arg3) >> 0xC;
+        arg0[3] += (rsin(arg1) * *arg3) >> 0xC;
+        if (arg2 % 2) {
+            return BO6_GetAguneaLightningAngle(
+                arg0, arg1 - 0x140, arg2 / 2, arg3);
+        } else {
+            rand();
+            rand();
+            return BO6_GetAguneaLightningAngle(
+                arg0, arg1 + 0x140, (arg2 - 1) / 2, arg3);
+        }
+    }
+    return arg1;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_AguneaShuffleParams);
+void BO6_AguneaShuffleParams(s32 bufSize, s32* buf) {
+    s32 i, idx, swapTemp;
+
+    for (i = bufSize - 1; i > 0; i--) {
+        idx = rand() % bufSize;
+        swapTemp = buf[i];
+        buf[i] = buf[idx];
+        buf[idx] = swapTemp;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityAguneaLightning);
 
