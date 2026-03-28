@@ -40,6 +40,10 @@ extern s32 D_us_80181278;
 void CreateEntityFromCurrentEntity(u16 entityId, Entity* entity);
 extern PfnEntityUpdate D_us_8018158C[];
 extern AnimationFrame D_us_80182150[];
+extern AnimationFrame D_us_80182190[];
+extern AnimationFrame D_us_801821E0[];
+extern AnimationFrame D_us_80182334[];
+extern AnimationFrame D_us_8018246C[];
 
 void func_us_801B9144(void) {
     switch (RIC.step_s) {
@@ -512,7 +516,94 @@ s32 BO6_RicDoAttack(void) {
     return 0;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicDoCrash);
+s32 BO6_RicDoCrash(void) {
+    SubweaponDef subWpn;
+    Entity* subWpnEnt;
+    s16 subWpnID;
+
+    subWpnID = BO6_RicCheckSubweapon(&subWpn, 1, 0);
+    if ((s16)subWpnID == 3 && g_Ric.timers[PL_T_3]) {
+        return 0;
+    }
+    if (subWpn.blueprintNum) {
+        if ((s16)subWpnID == 1) {
+            subWpnEnt = BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(subWpn.blueprintNum, 1), 0);
+        } else {
+            subWpnEnt = BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, subWpn.blueprintNum, 0);
+        }
+    }
+    if (!subWpnEnt) {
+        return 0;
+    }
+    g_Ric.unk46 = 4;
+    g_Ric.unk4E = 0;
+    RIC.velocityX = RIC.velocityY = 0;
+    switch ((s16)subWpnID) {
+    case 0:
+        BO6_RicSetStep(PL_S_FLAME_WHIP);
+        BO6_RicSetAnimation(D_us_801823C8);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_36, 1), 0);
+        break;
+    case 1:
+        BO6_RicSetStep(PL_S_THROW_DAGGERS);
+        BO6_RicSetAnimation(D_us_80182190);
+        g_api.PlaySfx(0x827);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 2), 0);
+        break;
+    case 2:
+        BO6_RicSetStep(PL_S_STAND_IN_AIR);
+        BO6_RicSetAnimation(D_us_801821E0);
+        RIC.velocityY = (s32)0xFFFB5000;
+        func_us_801B9C14();
+        g_api.PlaySfx(0x827);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 2), 0);
+        break;
+    case 3:
+        BO6_RicSetStep(PL_S_HYDROSTORM);
+        BO6_RicSetAnimation(D_us_80182334);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x40), 0);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x47), 0);
+        g_api.PlaySfx(0x828);
+        g_Ric.timers[PL_T_12] = 4;
+        return 1;
+    case 4:
+        BO6_RicSetStep(PL_S_STAND_IN_AIR);
+        BO6_RicSetAnimation(D_us_801821E0);
+        RIC.velocityY = (s32)0xFFFB5000;
+        func_us_801B9C14();
+        g_api.PlaySfx(0x829);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 2), 0);
+        break;
+    case 7:
+    case 8:
+    case 9:
+        BO6_RicSetStep(PL_S_SUBWPN_CRASH);
+        BO6_RicSetAnimation(D_us_80182334);
+        goto shared_crash;
+    case 5:
+    case 6:
+        BO6_RicSetStep(PL_S_SUBWPN_CRASH);
+        BO6_RicSetAnimation(D_us_8018246C);
+    shared_crash:
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x40), 0);
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x47), 0);
+        g_api.PlaySfx(0x827);
+        g_Ric.timers[PL_T_12] = 4;
+        return 1;
+    }
+    g_Ric.timers[PL_T_12] = 4;
+    return 1;
+}
 
 void BO6_RicSetDeadPrologue(void) { BO6_RicSetStep(PL_S_DEAD_PROLOGUE); }
 
