@@ -519,9 +519,82 @@ void OVL_EXPORT(RicEntitySubwpnCross)(Entity* self) {
     self->flags &= ~FLAG_DEAD;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", func_us_801C488C);
+void func_us_801C488C(Entity* self) {
+    Primitive* prim;
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnCrossTrail);
+    if (self->step == 0) {
+        self->primIndex = g_api.AllocPrimitives(PRIM_GT4, 1);
+        if (self->primIndex == -1) {
+            DestroyEntity(self);
+            return;
+        }
+        self->flags = FLAG_POS_CAMERA_LOCKED | FLAG_HAS_PRIMS;
+        self->velocityY = FIX(0.5);
+        self->posX.i.hi += (rand() & 0xF) - 8;
+        self->posY.i.hi += (rand() & 0xF) - 4;
+        prim = &g_PrimBuf[self->primIndex];
+        prim->clut = PAL_UNK_1B0;
+        prim->tpage = 0x1A;
+        prim->b0 = 0;
+        prim->b1 = 0;
+        prim->priority = self->zPriority + 4;
+        prim->drawMode = DRAW_TPAGE2 | DRAW_TPAGE | DRAW_TRANSP;
+        func_us_801BB5BC(prim, self->posX.i.hi, self->posY.i.hi);
+        self->step++;
+    } else {
+        prim = &g_PrimBuf[self->primIndex];
+        self->posY.val += self->velocityY;
+        if (func_us_801BB5BC(prim, self->posX.i.hi, self->posY.i.hi)) {
+            DestroyEntity(self);
+        }
+    }
+}
+
+extern s16 D_us_80182994[];
+
+void BO6_RicEntitySubwpnCrossTrail(Entity* self) {
+    s16* temp;
+
+    switch (self->step) {
+    case 0:
+        self->flags = FLAG_KEEP_ALIVE_OFFCAMERA | FLAG_POS_CAMERA_LOCKED;
+        self->ext.crossBoomerang.unk84 =
+            self->ext.crossBoomerang.parent->ext.crossBoomerang.unk84;
+        self->animSet = ANIMSET_OVL(4);
+        self->animCurFrame = D_us_80182994[self->params];
+        self->unk5A = 0x44;
+        self->palette = PAL_FLAG(0x1B0);
+        self->blendMode = BLEND_TRANSP;
+        self->facingLeft = RIC.facingLeft;
+        self->zPriority = RIC.zPriority;
+        self->drawFlags = ENTITY_ROTATE;
+        self->rotate = 0xC00;
+        self->step++;
+        break;
+    case 1:
+        self->rotate -= 0x80;
+        if (self->ext.crossBoomerang.parent->step - 6 < 2) {
+            self->step++;
+            self->ext.crossBoomerang.timer = (self->params + 1) * 4;
+        }
+        break;
+    case 2:
+        self->rotate -= 0x80;
+        if (--self->ext.crossBoomerang.timer == 0) {
+            DestroyEntity(self);
+            return;
+        }
+        break;
+    }
+
+    temp = (s16*)self->ext.crossBoomerang.unk84;
+    temp += self->ext.crossBoomerang.unk80 * 2;
+    self->posX.i.hi = *temp - g_Tilemap.scrollX.i.hi;
+    temp++;
+    self->posY.i.hi = *temp - g_Tilemap.scrollY.i.hi;
+    self->ext.crossBoomerang.unk80++;
+    self->ext.crossBoomerang.unk80 &= 0x3F;
+}
 
 INCLUDE_ASM(
     "boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnCrashCrossParticles);
@@ -851,7 +924,22 @@ void BO6_RicEntityVibhutiCrashCloud(Entity* self) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashVibhuti);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", func_us_801C8590);
+void func_us_801C8590(Entity* self) {
+    switch (self->step) {
+    case 0:
+        self->flags = FLAG_UNK_10000000;
+        self->hitboxWidth = 4;
+        self->hitboxHeight = 4;
+        self->step++;
+        break;
+    case 1:
+        self->ext.ILLEGAL.u16[0]++;
+        if ((s16)self->ext.ILLEGAL.u16[0] >= 4) {
+            DestroyEntity(self);
+        }
+        break;
+    }
+}
 
 extern s32 D_us_80182A0C[];
 
@@ -1028,7 +1116,45 @@ void func_us_801C8618(Entity* self) {
 INCLUDE_ASM(
     "boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashReboundStoneExplosion);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashReboundStone);
+void BO6_RicEntityCrashReboundStone(Entity* entity) {
+    switch (entity->step) {
+    case 0:
+        entity->flags = FLAG_UNK_20000 | FLAG_KEEP_ALIVE_OFFCAMERA;
+        entity->step++;
+        entity->ext.timer.t = 0x14;
+        // fallthrough
+    case 1:
+        if (--entity->ext.timer.t) {
+            break;
+        }
+    case 3:
+    case 5:
+        OVL_EXPORT(RicCreateEntFactoryFromEntity)(entity, BP_57, 0);
+        entity->step++;
+    case 2:
+    case 4:
+    case 6:
+        entity->ext.timer.t++;
+        if (entity->ext.timer.t > 10) {
+            entity->ext.timer.t = 0;
+            entity->posX.val = FIX(128.0);
+            entity->posY.val = 0;
+            OVL_EXPORT(RicCreateEntFactoryFromEntity)(
+                entity, FACTORY(BP_EMBERS, 1), 0);
+            entity->step++;
+        }
+        break;
+    case 7:
+        entity->ext.timer.t++;
+        if (entity->ext.timer.t > 15) {
+            DestroyEntity(entity);
+            g_Ric.unk4E = 1;
+            OVL_EXPORT(RicCreateEntFactoryFromEntity)(
+                entity, BP_CRASH_REBOUND_STONE_EXPLOSION, 0);
+        }
+        break;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashBibleBeam);
 
