@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo6.h"
 
+extern AnimationFrame ric_anim_stand[];
+extern AnimationFrame D_us_80182038[];
+extern AnimationFrame D_us_80182048[];
+extern AnimationFrame D_us_80182050[];
+extern AnimationFrame D_us_80182058[];
+
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
 void func_us_801B9338(void) {}
@@ -57,7 +63,31 @@ void DecelerateY(s32 arg0)
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckFacing);
+s32 BO6_RicCheckFacing(void) {
+    if (g_Ric.unk44 & 2) {
+        return 0;
+    }
+
+    if (RIC.facingLeft == 1) {
+        if (g_Ric.padPressed & PAD_RIGHT) {
+            RIC.facingLeft = 0;
+            g_Ric.unk4C = 1;
+            return -1;
+        } else if (g_Ric.padPressed & PAD_LEFT) {
+            return 1;
+        }
+    } else {
+        if (g_Ric.padPressed & PAD_RIGHT) {
+            return 1;
+        }
+        if (g_Ric.padPressed & PAD_LEFT) {
+            RIC.facingLeft = 1;
+            g_Ric.unk4C = 1;
+            return -1;
+        }
+    }
+    return 0;
+}
 
 void BO6_RicSetSpeedX(s32 speed) {
     if (g_CurrentEntity->facingLeft == 1)
@@ -71,7 +101,17 @@ void func_us_801B9ACC(s32 speed) {
     RIC.velocityX = speed;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetInvincibilityFrames);
+void BO6_RicSetInvincibilityFrames(s32 kind, s16 invincibilityFrames) {
+    if (!kind) {
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_CRASH_DAGGER, 0x15), 0);
+        if (g_Ric.timers[PL_T_INVINCIBLE_SCENE] <= invincibilityFrames) {
+            g_Ric.timers[PL_T_INVINCIBLE_SCENE] = invincibilityFrames;
+        }
+    } else if (g_Ric.timers[PL_T_INVINCIBLE] <= invincibilityFrames) {
+        g_Ric.timers[PL_T_INVINCIBLE] = invincibilityFrames;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_DisableAfterImage);
 
@@ -85,9 +125,32 @@ void func_us_801B9C14(void) {
 
 void func_us_801B9C3C(void) { BO6_RicSetStep(PL_S_DEBUG); }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetCrouch);
+void BO6_RicSetCrouch(s32 kind, s32 velocityX) {
+    BO6_RicSetStep(PL_S_CROUCH);
+    BO6_RicSetAnimation(D_us_80182048);
+    RIC.velocityX = velocityX;
+    RIC.velocityY = 0;
+    if (kind == 1) {
+        RIC.anim = D_us_80182038;
+        RIC.step_s = 4;
+    }
+    if (kind == 2) {
+        RIC.anim = D_us_80182058;
+        RIC.step_s = 1;
+    }
+    if (kind == 3) {
+        RIC.anim = D_us_80182050;
+        RIC.step_s = 4;
+    }
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetStand);
+void BO6_RicSetStand(s32 velocityX) {
+    RIC.velocityX = velocityX;
+    RIC.velocityY = 0;
+    g_Ric.unk44 = 0;
+    BO6_RicSetStep(PL_S_STAND);
+    BO6_RicSetAnimation(ric_anim_stand);
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9D74);
 
@@ -117,9 +180,28 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BA9D0);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckInput);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicGetFreeEntity);
+Entity* BO6_RicGetFreeEntity(s16 start, s16 end) {
+    Entity* entity = &g_Entities[start];
+    s16 i;
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicGetFreeEntityReverse);
+    for (i = start; i < end; i++, entity++) {
+        if (entity->entityId == E_NONE) {
+            return entity;
+        }
+    }
+    return NULL;
+}
+
+Entity* BO6_RicGetFreeEntityReverse(s16 start, s16 end) {
+    Entity* entity = &g_Entities[end - 1];
+    s16 i;
+    for (i = end - 1; i >= start; i--, entity--) {
+        if (entity->entityId == E_NONE) {
+            return entity;
+        }
+    }
+    return NULL;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BB314);
 
