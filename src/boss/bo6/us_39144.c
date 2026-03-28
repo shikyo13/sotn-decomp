@@ -16,25 +16,74 @@ void BO6_RicSetStep(s16 step) {
     RIC.step_s = 0;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetAnimation);
+void BO6_RicSetAnimation(AnimationFrame* anim) {
+    g_CurrentEntity->anim = anim;
+    g_CurrentEntity->poseTimer = 0;
+    g_CurrentEntity->pose = 0;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", DecelerateX);
+void DecelerateX(s32 speed) {
+    if (g_CurrentEntity->velocityX < 0) {
+        g_CurrentEntity->velocityX += speed;
+        if (g_CurrentEntity->velocityX > 0) {
+            g_CurrentEntity->velocityX = 0;
+        }
+    } else {
+        g_CurrentEntity->velocityX -= speed;
+        if (g_CurrentEntity->velocityX < 0)
+            g_CurrentEntity->velocityX = 0;
+    }
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", DecelerateY);
+void DecelerateY(s32 arg0)
+{
+    s32 temp_v0;
+    s32 temp_v0_2;
+    s32 temp_v0_3;
+
+    temp_v0 = g_CurrentEntity->velocityY;
+    if (temp_v0 < 0) {
+        temp_v0_2 = arg0 + temp_v0;
+        g_CurrentEntity->velocityY = temp_v0_2;
+        if (temp_v0_2 > 0) {
+            g_CurrentEntity->velocityY = 0;
+        }
+    } else {
+        temp_v0_3 = temp_v0 - arg0;
+        g_CurrentEntity->velocityY = temp_v0_3;
+        if (temp_v0_3 < 0) {
+            g_CurrentEntity->velocityY = 0;
+        }
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckFacing);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetSpeedX);
+void BO6_RicSetSpeedX(s32 speed) {
+    if (g_CurrentEntity->facingLeft == 1)
+        speed = -speed;
+    g_CurrentEntity->velocityX = speed;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9ACC);
+void func_us_801B9ACC(s32 speed) {
+    if (RIC.entityRoomIndex == 1)
+        speed = -speed;
+    RIC.velocityX = speed;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetInvincibilityFrames);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_DisableAfterImage);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9C14);
+void func_us_801B9C14(void) {
+    g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].ext.afterImage.disableFlag =
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].ext.afterImage.resetFlag =
+            g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].ext.afterImage.index =
+                g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].ext.afterImage.timer =
+                    0;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9C3C);
+void func_us_801B9C3C(void) { BO6_RicSetStep(PL_S_DEBUG); }
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetCrouch);
 
@@ -58,7 +107,7 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicDoAttack);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicDoCrash);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetDeadPrologue);
+void BO6_RicSetDeadPrologue(void) { BO6_RicSetStep(PL_S_DEAD_PROLOGUE); }
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetSlide);
 
