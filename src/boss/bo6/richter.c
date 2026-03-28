@@ -10,6 +10,9 @@ extern EInit D_us_80180400;
 extern s16 D_us_801D1686;
 extern s32 D_us_801CF3E0;
 extern s32 D_us_801CF3E4;
+extern AnimationFrame D_us_80181F1C[];
+extern AnimationFrame D_us_80182130[];
+extern AnimationFrame D_us_801822B8[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -103,7 +106,73 @@ void EntityRichter(Entity* self) {
     g_Ric.unk6C = g_Ric.unk6A;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepStand);
+void BO6_RicStepStand(void) {
+    if (BO6_RicCheckInput(0x4305C)) {
+        return;
+    }
+    DecelerateX(0x2000);
+    switch (RIC.step_s) {
+    case 0:
+        if (BO6_RicCheckFacing()) {
+            func_us_801B9DE4(0);
+        } else if (g_Ric.padPressed & PAD_UP) {
+            BO6_RicSetAnimation(D_us_80181F1C);
+            RIC.step_s = 1;
+            break;
+        }
+        break;
+    case 1:
+        if (BO6_RicCheckFacing()) {
+            func_us_801B9DE4(0);
+        } else if (g_Ric.padPressed & PAD_UP) {
+        } else {
+            BO6_RicSetStand(0);
+        }
+        break;
+    case 0x40:
+        BO6_DisableAfterImage(1, 1);
+        if (RIC.pose < 3) {
+            BO6_RicCheckFacing();
+            if (g_Ric.padPressed & PAD_DOWN) {
+                RIC.step = PL_S_CROUCH;
+                RIC.anim = D_us_80182130;
+                break;
+            }
+        }
+
+        if (RIC.poseTimer < 0) {
+            if (g_Ric.padPressed & PAD_SQUARE) {
+                RIC.step_s++;
+                g_Ric.unk46 = 2;
+                BO6_RicSetAnimation(D_us_801822B8);
+                BO6_RicCreateEntFactoryFromEntity(
+                    g_CurrentEntity, BP_ARM_BRANDISH_WHIP, 0);
+                break;
+            }
+            g_Ric.unk46 = 0;
+            BO6_RicSetStand(0);
+        }
+        break;
+    case 0x41:
+        BO6_DisableAfterImage(1, 1);
+        if (g_Ric.padPressed & PAD_SQUARE) {
+            break;
+        }
+        g_Ric.unk46 = 0;
+        BO6_RicSetStand(0);
+        break;
+    case 0x42:
+        BO6_DisableAfterImage(1, 1);
+        if (RIC.pose < 3) {
+            BO6_RicCheckFacing();
+        }
+        if (RIC.poseTimer < 0) {
+            g_Ric.unk46 = 0;
+            BO6_RicSetStand(0);
+        }
+        break;
+    }
+}
 
 void BO6_RicStepWalk(void) {
     if (BO6_RicCheckInput(0x305C)) {
@@ -300,4 +369,57 @@ void func_us_801B8E80(s32 arg0) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepHighJump);
+void BO6_RicStepHighJump(void) {
+    bool loadAnim;
+
+    loadAnim = false;
+    g_Ric.high_jump_timer++;
+    switch (RIC.step_s) {
+    case 0:
+        if (g_Ric.padPressed & (PAD_LEFT | PAD_RIGHT)) {
+            if (RIC.facingLeft) {
+                if (!(g_Ric.padPressed & PAD_LEFT)) {
+                    DecelerateX(0x1000);
+                }
+            } else {
+                if (!(g_Ric.padPressed & PAD_RIGHT)) {
+                    DecelerateX(0x1000);
+                }
+            }
+        } else {
+            DecelerateX(0x1000);
+        }
+
+        if (g_Ric.vram_flag & TOUCHING_CEILING) {
+            func_us_801B8E80(3);
+            g_Ric.high_jump_timer = 0;
+            RIC.step_s = 2;
+        } else if (g_Ric.high_jump_timer >= 0x1D) {
+            RIC.step_s = 1;
+            RIC.velocityY = -0x60000;
+        }
+        break;
+    case 1:
+        if (g_Ric.vram_flag & TOUCHING_CEILING) {
+            RIC.step_s = 2;
+            func_us_801B8E80(3);
+            g_Ric.high_jump_timer = 0;
+        } else {
+            RIC.velocityY += 0x6000;
+            if (RIC.velocityY > 0x8000) {
+                loadAnim = true;
+            }
+        }
+        break;
+    case 2:
+        if (g_Ric.high_jump_timer >= 5) {
+            loadAnim = true;
+        }
+        break;
+    }
+
+    if (loadAnim) {
+        BO6_RicSetAnimation(D_us_801820BC);
+        BO6_RicSetStep(PL_S_JUMP);
+    }
+}
