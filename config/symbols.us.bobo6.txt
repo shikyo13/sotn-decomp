@@ -138,6 +138,7 @@ BO6_EntityStopWatch = 0x801CB664;
 BO6_RicEntitySubwpnBibleTrail = 0x801CC600;
 BO6_RicEntitySubwpnBible = 0x801CC818;
 BO6_RicEntityCrashCrossBeam = 0x801CCD7C;
+D_us_801D080C = 0x801D080C;
 g_SkipCutscene = 0x801D1110;
 g_Dialogue = 0x801D1114; // size:0x44
 g_CutsceneFlags = 0x801D11C4;
