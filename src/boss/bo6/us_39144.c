@@ -6,6 +6,9 @@ extern AnimationFrame D_us_80182038[];
 extern AnimationFrame D_us_80182048[];
 extern AnimationFrame D_us_80182050[];
 extern AnimationFrame D_us_80182058[];
+extern AnimationFrame D_us_801822D8[];
+extern AnimationFrame D_us_80182304[];
+extern AnimationFrame D_us_80182310[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
@@ -172,9 +175,30 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicDoCrash);
 
 void BO6_RicSetDeadPrologue(void) { BO6_RicSetStep(PL_S_DEAD_PROLOGUE); }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetSlide);
+void BO6_RicSetSlide(void) {
+    BO6_RicCheckFacing();
+    BO6_RicSetStep(PL_S_SLIDE);
+    BO6_RicSetAnimation(D_us_801822D8);
+    g_CurrentEntity->velocityY = 0;
+    BO6_RicSetSpeedX(0x58000);
+    func_us_801B9C14();
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_25, 0);
+    g_api.PlaySfx(SFX_BOSS_RIC_SLIDE_SKID);
+    g_Ric.timers[PL_T_12] = 4;
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetSlideKick);
+void BO6_RicSetSlideKick(void) {
+    g_Ric.unk44 = 0;
+    BO6_RicSetStep(PL_S_SLIDE_KICK);
+    BO6_RicSetAnimation(D_us_80182304);
+    g_CurrentEntity->velocityY = -0x20000;
+    BO6_RicSetSpeedX(0x58000);
+    func_us_801B9C14();
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_25, 0);
+    g_api.PlaySfx(SFX_BOSS_RIC_ATTACK_A);
+    g_Ric.timers[PL_T_12] = 4;
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_31, 0);
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BA9D0);
 
@@ -221,7 +245,24 @@ void func_us_801BBBC8(void) {}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BBBD0);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCreateEntFactoryFromEntity);
+Entity* BO6_RicCreateEntFactoryFromEntity(
+    Entity* source, u32 factoryParams, s32 arg2) {
+    Entity* entity = BO6_RicGetFreeEntity(
+        STAGE_ENTITY_START + 4, STAGE_ENTITY_START + 16);
+    if (!entity) {
+        return NULL;
+    }
+    DestroyEntity(entity);
+    entity->entityId = E_FACTORY;
+    entity->ext.factory.parent = source;
+    entity->posX.val = source->posX.val;
+    entity->posY.val = source->posY.val;
+    entity->facingLeft = source->facingLeft;
+    entity->params = factoryParams & 0xFFF;
+    entity->ext.factory.paramsBase = (factoryParams & 0xFF0000) >> 8;
+    entity->zPriority = source->zPriority;
+    return entity;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityFactory);
 
