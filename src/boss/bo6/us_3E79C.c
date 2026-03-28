@@ -1,7 +1,61 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 #include "bo6.h"
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", func_us_801BE79C);
+void func_us_801BE79C(Entity* self) {
+    Primitive* prim;
+    s16 primIndex;
+
+    self->posX.i.hi = RIC.posX.i.hi;
+    self->posY.i.hi = RIC.posY.i.hi - 8;
+    switch (self->step) {
+    case 0:
+        self->primIndex = g_api.AllocPrimitives(PRIM_GT4, 1);
+        if (self->primIndex == -1) {
+            DestroyEntity(self);
+            return;
+        }
+        self->ext.circleExpand.width = 16;
+        self->ext.circleExpand.height = 12;
+        prim = &g_PrimBuf[self->primIndex];
+        prim->u0 = prim->u2 = 64;
+        prim->v0 = prim->v1 = 192;
+        prim->u1 = prim->u3 = 127;
+        prim->v2 = prim->v3 = 255;
+        PGREY(prim, 0) = PGREY(prim, 1) = PGREY(prim, 2) = PGREY(prim, 3) = 128;
+        prim->tpage = 0x1A;
+        prim->clut = PAL_CC_FIRE_EFFECT;
+        prim->priority = RIC.zPriority + 8;
+        prim->drawMode = DRAW_TPAGE2 | DRAW_TPAGE | DRAW_COLORS | DRAW_TRANSP;
+        self->flags =
+            FLAG_UNK_10000000 | FLAG_POS_CAMERA_LOCKED | FLAG_HAS_PRIMS;
+        self->step++;
+        break;
+
+    case 1:
+        self->ext.circleExpand.width += 2;
+        self->ext.circleExpand.height += 2;
+        if (self->ext.circleExpand.width > 56) {
+            DestroyEntity(self);
+            return;
+        }
+        break;
+    }
+
+    prim = &g_PrimBuf[self->primIndex];
+    prim->x0 = self->posX.i.hi - self->ext.circleExpand.width;
+    prim->y0 = self->posY.i.hi - self->ext.circleExpand.height;
+    prim->x1 = self->posX.i.hi + self->ext.circleExpand.width;
+    prim->y1 = self->posY.i.hi - self->ext.circleExpand.height;
+    prim->x2 = self->posX.i.hi - self->ext.circleExpand.width;
+    prim->y2 = self->posY.i.hi + self->ext.circleExpand.height;
+    prim->x3 = self->posX.i.hi + self->ext.circleExpand.width;
+    prim->y3 = self->posY.i.hi + self->ext.circleExpand.height;
+    if (prim->b3 >= 12) {
+        prim->b3 -= 12;
+    }
+    // remember last element of PGREY(prim,3) is prim->b3
+    PGREY(prim, 0) = PGREY(prim, 1) = PGREY(prim, 2) = PGREY(prim, 3);
+}
 
 INCLUDE_ASM(
     "boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityShrinkingPowerUpRing);
@@ -12,7 +66,74 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityHitByLightning);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", func_us_801C03E8);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", EntityShaft);
+extern s32 g_CutsceneFlags;
+void CreateEntityFromCurrentEntity(u16 entityId, Entity* entity);
+
+void EntityShaft(Entity* self) {
+    FntPrint("I AM SHAFT\n");
+    switch (self->step) {
+    case 0:
+        self->flags = FLAG_UNK_10000000;
+        self->animSet = ANIMSET_OVL(5);
+        self->animCurFrame = 0x8B;
+        self->unk5A = 0x48;
+        self->palette = PAL_FLAG(0x250);
+        self->drawFlags = ENTITY_OPACITY;
+        self->blendMode = BLEND_TRANSP | BLEND_ADD;
+        self->opacity = 0;
+        self->zPriority = RIC.zPriority + 2;
+        self->step++;
+        break;
+
+    case 1:
+        self->opacity += 4;
+        if (self->opacity < 0x31) {
+            break;
+        }
+        self->step++;
+        CreateEntityFromCurrentEntity(E_ID_17, &g_Entities[0xC8]);
+        g_Entities[0xC8].params = 3;
+        self->ext.placeholder.s16[0] = 0x100;
+        break;
+
+    case 2:
+        if (self->ext.placeholder.s16[0] != 0) {
+            self->ext.placeholder.s16[0]--;
+            break;
+        }
+        if ((g_CutsceneFlags & 0x40) || g_DemoMode) {
+            self->step++;
+            self->scaleY = 0x100;
+            self->scaleX = 0x100;
+            self->drawFlags |= ENTITY_SCALEX | ENTITY_SCALEY;
+        }
+        break;
+
+    case 3:
+        self->scaleX -= 0x20;
+        if ((s16)self->scaleX < 0x10) {
+            self->scaleX = 0x10;
+        }
+        self->scaleY += 0x40;
+        if ((s16)self->scaleY > 0x800) {
+            self->scaleY = 0x800;
+        }
+        self->opacity += 6;
+        if (self->opacity >= 0xF1) {
+            self->step++;
+        }
+        return;
+
+    case 4:
+        self->opacity -= 3;
+        if (self->opacity < 4) {
+            DestroyEntity(self);
+        }
+        return;
+    }
+    self->posY.val += rsin(self->ext.placeholder.s16[1]) << 2;
+    self->ext.placeholder.u16[1] += 0x20;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", func_us_801C0FE8);
 
@@ -65,7 +186,7 @@ void BO6_RicEntityArmBrandishWhip(Entity* entity) {
     }
     entity->facingLeft = RIC.facingLeft;
     if (entity->step == 0) {
-        entity->flags = 0x18000000;
+        entity->flags = FLAG_UNK_10000000 | FLAG_POS_CAMERA_LOCKED;
         entity->animSet = ANIMSET_OVL(3);
         entity->unk5A = 0x24;
         entity->palette = 0x8220;
@@ -575,7 +696,7 @@ void func_us_801C488C(Entity* self) {
             return;
         }
         self->flags = FLAG_HAS_PRIMS | FLAG_UNK_8000000;
-        self->velocityY = 0x8000;
+        self->velocityY = FIX(0.5);
         self->posX.i.hi += (rand() & 0xF) - 8;
         self->posY.i.hi += (rand() & 0xF) - 4;
         prim = &g_PrimBuf[self->primIndex];
@@ -583,7 +704,7 @@ void func_us_801C488C(Entity* self) {
         prim->tpage = 0x1A;
         prim->r0 = 0;
         prim->r1 = 0;
-        prim->drawMode = 0x31;
+        prim->drawMode = DRAW_TPAGE2 | DRAW_TPAGE | DRAW_TRANSP;
         prim->priority = self->zPriority + 4;
         func_us_801BB5BC(prim, self->posX.i.hi, self->posY.i.hi);
         self->step++;
@@ -901,8 +1022,8 @@ u8 BO6_PrimDecreaseBrightness(Primitive* prim, u8 amount) {
 
     isEnd = 0;
     colorPtr = &prim->r0;
-    for (i = 0; i < 4;
-         colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0), i++) {
+    for (i = 0; i < 4; colorPtr += OFF(Primitive, r1) - OFF(Primitive, r0),
+        i++) {
         for (j = 0; j < 3; j++) {
             channelPtr = &colorPtr[j];
             *channelPtr -= amount;
@@ -973,7 +1094,7 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashVibhuti);
 void func_us_801C8590(Entity* self) {
     switch (self->step) {
     case 0:
-        self->flags = 0x10000000;
+        self->flags = FLAG_UNK_10000000;
         self->hitboxWidth = 4;
         self->hitboxHeight = 4;
         self->step++;
@@ -1185,8 +1306,7 @@ void BO6_RicEntityCrashReboundStone(Entity* entity) {
             entity->ext.timer.t = 0;
             entity->posX.val = FIX(128.0);
             entity->posY.val = 0;
-            BO6_RicCreateEntFactoryFromEntity(
-                entity, FACTORY(BP_EMBERS, 1), 0);
+            BO6_RicCreateEntFactoryFromEntity(entity, FACTORY(BP_EMBERS, 1), 0);
             entity->step++;
         }
         break;
