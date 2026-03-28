@@ -11,7 +11,10 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B94CC);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B96F4);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetStep);
+void BO6_RicSetStep(s16 step) {
+    RIC.step = step;
+    RIC.step_s = 0;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetAnimation);
 
