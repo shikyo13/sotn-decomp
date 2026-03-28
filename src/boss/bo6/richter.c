@@ -25,6 +25,13 @@ extern AnimationFrame D_us_8018228C[];
 extern AnimationFrame D_us_8018221C[];
 extern s32 D_us_80181278;
 extern s32 D_us_801D11C0;
+extern AnimationFrame D_us_801820CC[];
+extern RECT D_us_8018127C;
+extern u8 D_us_801CF3E8[];
+extern s32 D_us_801D07F0;
+extern s32 D_us_801D07F4;
+extern s16 D_us_801D07E8;
+extern u16 D_us_801D07EC;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -694,7 +701,161 @@ void BO6_RicStepHit(s32 damageEffect, u32 damageKind, s16 prevStep) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepDead);
+void BO6_RicStepDead(s32 damageEffects, s32 damageKind, s32 prevStep,
+                     s32 prevStepS) {
+    s32 j;
+    s32 i;
+    u8* s2;
+    u8* imgPtr;
+    s32 disableColorChange = 0;
+    PlayerDraw* playerDraw = &g_PlayerDraw[8];
+
+    switch (RIC.step_s) {
+    case 0:
+        BO6_RicResetPose();
+        func_us_801B77D8();
+        func_us_801B9ACC(0xFFFF4000);
+        BO6_RicSetAnimation(D_us_801820CC);
+        RIC.velocityY = (s32)0xFFFE6000;
+        g_api.PlaySfx(0x83E);
+        D_us_801D07F4 = damageEffects;
+        RIC.step_s++;
+        if (g_CastleFlags[0x95]) {
+            D_us_80181278 = 0xA;
+        } else if (g_DemoMode) {
+            D_us_80181278 = 0xA;
+        } else {
+            CreateEntityFromCurrentEntity(E_ID_17, &g_Entities[0xC8]);
+            g_Entities[0xC8].params = 2;
+            g_Entities[0xC8].flags = 0x10000;
+            D_us_80181278 = 0xA;
+        }
+        RIC.palette = 0x8220;
+        return;
+    case 1:
+        if (D_us_801D07F4 & ELEMENT_FIRE) {
+            func_us_801BB314(0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x48), 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_DEATH_BY_FIRE, 2), 0);
+            D_us_801D07F0 = 1;
+        } else if (D_us_801D07F4 & ELEMENT_THUNDER) {
+            func_us_801BB314(2);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x4C), 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_HIT_BY_THUNDER, 1), 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_HIT_BY_THUNDER, 2), 0);
+            D_us_801D07F0 = 2;
+        } else if (D_us_801D07F4 & ELEMENT_ICE) {
+            func_us_801BB314(3);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x4D), 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, BP_HIT_BY_ICE, 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_HIT_BY_ICE, 1), 0);
+            D_us_801D07F0 = 3;
+            RIC.drawMode = BLEND_TRANSP | BLEND_ADD;
+        } else {
+            func_us_801BB314(1);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x4A), 0);
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_MULTIPLE_EMBERS, 5), 0);
+            D_us_801D07F0 = 0;
+        }
+        playerDraw->b3 = playerDraw->g3 = playerDraw->r3 = playerDraw->b2 =
+            playerDraw->g2 = playerDraw->r2 = playerDraw->b1 =
+                playerDraw->g1 = playerDraw->r1 = playerDraw->b0 =
+                    playerDraw->g0 = playerDraw->r0 = 0x80;
+        playerDraw->enableColorBlend = 1;
+        RIC.step_s++;
+        break;
+    case 2:
+        if (RIC.pose != 4) {
+            break;
+        }
+        RIC.step_s++;
+        break;
+    case 3:
+        RIC.velocityY += 0xB00;
+        if (RIC.velocityY >= 0x1001) {
+            RIC.velocityY >>= 2;
+            RIC.velocityX >>= 3;
+            StoreImage(&D_us_8018127C, (u_long*)D_us_801CF3E8);
+            D_us_801D07EC = 0;
+            D_us_801D07E8 = 0x40;
+            RIC.step_s++;
+        }
+        break;
+    case 4:
+        if (g_Timer & 1) {
+            break;
+        }
+        if (D_us_801D07E8 > 16) {
+            RIC.velocityY += 0x233;
+        } else {
+            RIC.velocityX = 0;
+            RIC.velocityY = 0;
+        }
+        imgPtr = D_us_801CF3E8;
+        for (i = 0; i < 4; i++) {
+            s2 = imgPtr;
+            s2 += (D_us_801D07EC >> 1) & 7;
+            s2 += (D_us_801D07EC << 2) & 0x3C0;
+            for (j = 0; j < 0x28; j++) {
+                if (D_us_801D07EC & 1) {
+                    *(s2 + ((j & 7) * 8) + ((j >> 3) * 0x400)) &= 0xF0;
+                } else {
+                    *(s2 + ((j & 7) * 8) + ((j >> 3) * 0x400)) &= 0x0F;
+                }
+            }
+            D_us_801D07EC += 0x23;
+            D_us_801D07EC &= 0xFF;
+        }
+        LoadImage(&D_us_8018127C, (u_long*)imgPtr);
+        if (!--D_us_801D07E8) {
+            RIC.velocityY = 0;
+            playerDraw->enableColorBlend = 0;
+            RIC.step_s = 0x80;
+        }
+        break;
+    }
+    if (!disableColorChange) {
+        if (D_us_801D07F0 == 0) {
+            if (playerDraw->r0 < 0xF8) {
+                playerDraw->r0 += 2;
+            }
+            if (playerDraw->b0 > 8) {
+                playerDraw->b0 -= 2;
+            }
+            playerDraw->r3 = playerDraw->r2 = playerDraw->r1 = playerDraw->r0;
+            playerDraw->g0 = playerDraw->g1 = playerDraw->b1 =
+                playerDraw->g2 = playerDraw->b2 = playerDraw->g3 =
+                    playerDraw->b3 = playerDraw->b0;
+        }
+        if (D_us_801D07F0 == 1 || D_us_801D07F0 == 2) {
+            if (playerDraw->b0 > 8) {
+                playerDraw->b0 -= 2;
+            }
+            playerDraw->r3 = playerDraw->r2 = playerDraw->r1 =
+                playerDraw->r0 = playerDraw->g0 = playerDraw->g1 =
+                    playerDraw->b1 = playerDraw->g2 = playerDraw->b2 =
+                        playerDraw->g3 = playerDraw->b3 = playerDraw->b0;
+        }
+        if (D_us_801D07F0 == 3) {
+            if ((playerDraw->r0 > 8) && (g_Timer & 1)) {
+                playerDraw->r0 -= 1;
+            }
+            playerDraw->r3 = playerDraw->r2 = playerDraw->r1 =
+                playerDraw->g3 = playerDraw->g2 = playerDraw->g1 =
+                    playerDraw->g0 = playerDraw->r0;
+        }
+    }
+}
 
 void BO6_RicStepStandInAir(void) {
     if (!RIC.step_s) {
