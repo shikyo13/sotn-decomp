@@ -4,6 +4,7 @@
 extern s32 D_us_801CF3C8;
 extern s32 D_us_801CF3CC;
 extern AnimationFrame D_us_801820B0[];
+extern s32 D_us_801D07F8;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -115,7 +116,26 @@ void BO6_RicStepGenericSubwpnCrash(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepThrowDaggers);
+void BO6_RicStepThrowDaggers(void) {
+    if (!RIC.step_s) {
+        D_us_801D07F8 = 0x200;
+        RIC.step_s++;
+    } else {
+        BO6_RicCheckFacing();
+        D_us_801D07F8--;
+        if (!D_us_801D07F8) {
+            g_Ric.unk46 = 0;
+            BO6_RicSetStand(0);
+            g_Ric.unk4E = 1;
+        }
+    }
+    if (g_Ric.padTapped & PAD_CROSS) {
+        func_us_801B9E70();
+        g_Ric.unk46 = 0;
+        g_Ric.unk4E = 1;
+        D_us_801D07F8 = 0;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepSlide);
 

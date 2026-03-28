@@ -10,7 +10,10 @@ extern AnimationFrame D_us_801822D8[];
 extern AnimationFrame D_us_801821F8[];
 extern AnimationFrame D_us_80182304[];
 extern AnimationFrame D_us_80182310[];
+extern AnimationFrame D_us_80182078[];
+extern AnimationFrame D_us_80182094[];
 extern AnimationFrame D_us_80182324[];
+extern AnimationFrame D_us_80182360[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
@@ -193,7 +196,24 @@ void func_us_801B9D74(void) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9DE4);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9E70);
+void func_us_801B9E70(void) {
+    if (BO6_RicCheckFacing() || RIC.step == PL_S_SLIDE) {
+        BO6_RicSetAnimation(D_us_80182094);
+        if (RIC.step == PL_S_RUN) {
+            BO6_RicSetSpeedX(0x24000);
+            g_Ric.unk44 = 0x10;
+        } else {
+            BO6_RicSetSpeedX(0x14000);
+            g_Ric.unk44 = 0;
+        }
+    } else {
+        BO6_RicSetAnimation(D_us_80182078);
+        RIC.velocityX = 0;
+        g_Ric.unk44 = 4;
+    }
+    BO6_RicSetStep(PL_S_JUMP);
+    RIC.velocityY = -0x4B000;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetFall);
 
@@ -245,7 +265,18 @@ void BO6_RicSetSlideKick(void) {
     BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_31, 0);
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BA9D0);
+void func_us_801BA9D0(void) {
+    BO6_RicSetStep(PL_S_BLADEDASH);
+    BO6_RicSetAnimation(D_us_80182360);
+    g_CurrentEntity->velocityY = 0;
+    BO6_RicSetSpeedX(0x58000);
+    g_Ric.unk46 = 5;
+    g_Ric.timers[PL_T_12] = 4;
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_BLADE_DASH, 0);
+    func_us_801B9C14();
+    g_api.PlaySfx(SFX_BOSS_RIC_DASH_ATTACK);
+    g_api.PlaySfx(SFX_RIC_SLIDE_SKID);
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckInput);
 
