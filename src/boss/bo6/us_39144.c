@@ -24,6 +24,13 @@ extern AnimationFrame D_us_80181A40[];
 extern s32 D_us_801D084C;
 extern EInit D_us_80180424;
 extern EInit D_us_80180430;
+extern u8 D_us_801812B8[][4];
+extern u8 D_us_801D07FC;
+extern u8 D_us_801D0800;
+extern u8 D_us_801D0804;
+extern u8 D_us_801D0808;
+extern SubweaponDef subweapons_def[];
+extern u8 D_us_80181524[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
@@ -309,7 +316,30 @@ void func_us_801BA050(void) {
     g_Ric.timers[PL_T_12] = 4;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckSubwpnChainLimit);
+s32 BO6_RicCheckSubwpnChainLimit(s16 subwpnId, s16 limit) {
+    Entity* entity;
+    s32 i;
+    s32 nFound;
+    s32 nEmpty;
+
+    entity = &g_Entities[0x60];
+    for (i = 0, nFound = 0, nEmpty = 0; i < 32; i++, entity++) {
+        if (!entity->entityId) {
+            nEmpty++;
+        }
+        if (entity->ext.subweapon.subweaponId &&
+            entity->ext.subweapon.subweaponId == subwpnId) {
+            nFound++;
+        }
+        if (nFound >= limit) {
+            return -1;
+        }
+    }
+    if (nEmpty) {
+        return 0;
+    }
+    return -1;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicDoSubweapon);
 
@@ -382,13 +412,72 @@ Entity* BO6_RicGetFreeEntityReverse(s16 start, s16 end) {
     return NULL;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BB314);
+void func_us_801BB314(s32 arg0) {
+    D_us_801D07FC = D_us_801812B8[arg0][0];
+    D_us_801D0800 = D_us_801812B8[arg0][1];
+    D_us_801D0804 = D_us_801812B8[arg0][2];
+    D_us_801D0808 = D_us_801812B8[arg0][3];
+}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BB370);
+void func_us_801BB370(Entity* entity) {
+    SubweaponDef* subwpn = &subweapons_def[entity->ext.subweapon.subweaponId];
+    if (g_Ric.timers[PL_T_INVINCIBLE_SCENE]) {
+        entity->attack = subwpn->attack * 2;
+    } else {
+        entity->attack = subwpn->attack;
+    }
+    entity->attackElement = subwpn->attackElement;
+    entity->hitboxState = subwpn->hitboxState;
+    entity->nFramesInvincibility = subwpn->nFramesInvincibility;
+    entity->stunFrames = subwpn->stunFrames;
+    entity->hitEffect = subwpn->hitEffect;
+    entity->entityRoomIndex = subwpn->entityRoomIndex;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckSubweapon);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BB5BC);
+s32 func_us_801BB5BC(Primitive* prim, s16 posX, s16 posY) {
+    u8* uvData;
+    s16 halfSize;
+    s32 ret;
+
+    ret = 0;
+    if (prim->b0 >= 6) {
+        prim->b0 = 0;
+        ret = -1;
+    }
+
+    halfSize = 6;
+    uvData = &D_us_80181524[prim->b0 * 8];
+    if (prim->b0 >= 3) {
+        halfSize = 4;
+    }
+
+    prim->x0 = posX - halfSize;
+    prim->y0 = posY - halfSize;
+    prim->x1 = posX + halfSize;
+    prim->y1 = posY - halfSize;
+    prim->x2 = posX - halfSize;
+    prim->y2 = posY + halfSize;
+    prim->x3 = posX + halfSize;
+    prim->y3 = posY + halfSize;
+
+    prim->u0 = *uvData++;
+    prim->v0 = *uvData++;
+    prim->u1 = *uvData++;
+    prim->v1 = *uvData++;
+    prim->u2 = *uvData++;
+    prim->v2 = *uvData++;
+    prim->u3 = *uvData;
+    prim->b1++;
+    prim->v3 = *(uvData + 1);
+
+    if (!(prim->b1 & 1)) {
+        prim->b0++;
+    }
+
+    return ret;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityHitByHoly);
 
@@ -587,6 +676,16 @@ void func_us_801BD384(Entity* self) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BD47C);
+s32 func_us_801BD47C(Entity* self) {
+    Entity* entity = &g_Entities[0x50];
+    s16 i;
+    for (i = 0x50; i < 0x90; i++, entity++) {
+        if (self->entityId == entity->entityId &&
+            self->params == entity->params && entity != self) {
+            return 1;
+        }
+    }
+    return 0;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityPlayerBlinkWhite);
