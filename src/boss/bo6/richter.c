@@ -18,6 +18,7 @@ extern AnimationFrame D_us_80182068[];
 extern AnimationFrame D_us_80182110[];
 extern AnimationFrame D_us_801822C0[];
 extern AnimationFrame D_us_801820E4[];
+extern AnimationFrame D_us_801822C8[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -218,7 +219,126 @@ void BO6_RicStepRun(void) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepJump);
+void BO6_RicStepJump(void) {
+    s32 facing;
+
+    if ((g_Ric.vram_flag & TOUCHING_CEILING) &&
+        (RIC.velocityY < -0x10000)) {
+        RIC.velocityY = -0x4000;
+        g_Ric.unk44 |= 0x20;
+    }
+    if (BO6_RicCheckInput(
+            CHECK_GROUND | CHECK_FACING | CHECK_ATTACK | CHECK_GRAVITY_JUMP)) {
+        return;
+    }
+    switch (RIC.step_s) {
+    case 0:
+        DecelerateX(0x1000);
+        facing = BO6_RicCheckFacing();
+        if (facing) {
+            if (g_Ric.unk44 & 0x10) {
+                BO6_RicSetSpeedX(0x24000);
+            } else {
+                BO6_RicSetSpeedX(0x14000);
+            }
+            g_Ric.unk44 &= ~4;
+        } else {
+            g_Ric.unk44 &= ~0x10;
+            if ((RIC.pose < 2) && !(g_Ric.unk44 & 8) &&
+                (g_Ric.unk44 & 4) && (g_Ric.padTapped & PAD_CROSS)) {
+                BO6_RicSetAnimation(D_us_801820E4);
+                BO6_RicSetSpeedX(0xFFFE8000);
+                RIC.velocityY = (s32)0xFFFD6000;
+                g_Ric.unk44 |= 0xA;
+                g_Ric.unk44 &= ~4;
+                RIC.step_s = 2;
+            }
+        }
+        break;
+    case 2:
+        break;
+    case 0x40:
+        BO6_DisableAfterImage(1, 1);
+        if (RIC.pose < 3) {
+            facing = BO6_RicCheckFacing();
+            if (facing) {
+                if (g_Ric.unk44 & 0x10) {
+                    BO6_RicSetSpeedX(0x24000);
+                } else {
+                    BO6_RicSetSpeedX(0x14000);
+                }
+                g_Ric.unk44 &= ~4;
+            } else {
+                g_Ric.unk44 &= ~0x10;
+            }
+        } else {
+            if (((g_Ric.padPressed & PAD_RIGHT) && RIC.facingLeft == 0) ||
+                ((g_Ric.padPressed & PAD_LEFT) && RIC.facingLeft)) {
+                if (g_Ric.unk44 & 0x10) {
+                    BO6_RicSetSpeedX(0x24000);
+                } else {
+                    BO6_RicSetSpeedX(0x14000);
+                }
+                BO6_RicSetSpeedX(0x14000);
+                g_Ric.unk44 &= ~4;
+            } else {
+                g_Ric.unk44 &= ~0x10;
+            }
+        }
+        if (RIC.poseTimer < 0) {
+            if (g_Ric.padPressed & PAD_SQUARE) {
+                RIC.step_s += 1;
+                g_Ric.unk46 = 2;
+                BO6_RicSetAnimation(D_us_801822C8);
+                BO6_RicCreateEntFactoryFromEntity(
+                    g_CurrentEntity, BP_ARM_BRANDISH_WHIP, 0);
+            }
+        }
+        break;
+    case 0x41:
+        BO6_DisableAfterImage(1, 1);
+        if (!(g_Ric.padPressed & PAD_SQUARE)) {
+            g_Ric.unk46 = 0;
+            RIC.step_s = 0;
+            BO6_RicSetAnimation(D_us_801820B0);
+        }
+        break;
+    case 0x42:
+        BO6_DisableAfterImage(1, 1);
+        if (RIC.pose < 3) {
+            facing = BO6_RicCheckFacing();
+            if (facing) {
+                if (g_Ric.unk44 & 0x10) {
+                    BO6_RicSetSpeedX(0x24000);
+                } else {
+                    BO6_RicSetSpeedX(0x14000);
+                }
+                g_Ric.unk44 &= ~4;
+            } else {
+                g_Ric.unk44 &= ~0x10;
+            }
+        } else {
+            if (((g_Ric.padPressed & PAD_RIGHT) && RIC.facingLeft == 0) ||
+                ((g_Ric.padPressed & PAD_LEFT) && RIC.facingLeft)) {
+                if (g_Ric.unk44 & 0x10) {
+                    BO6_RicSetSpeedX(0x24000);
+                } else {
+                    BO6_RicSetSpeedX(0x14000);
+                }
+                BO6_RicSetSpeedX(0x14000);
+                g_Ric.unk44 &= ~4;
+            } else {
+                g_Ric.unk44 &= ~0x10;
+            }
+        }
+        if (RIC.poseTimer < 0) {
+            g_Ric.unk46 = 0;
+            RIC.step_s = 0;
+            BO6_RicSetAnimation(D_us_801820B0);
+        }
+        break;
+    }
+}
 
 void BO6_RicStepFall(void) {
     if (BO6_RicCheckInput(0x9009)) {
