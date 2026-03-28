@@ -10,6 +10,8 @@ extern AnimationFrame D_us_801822D8[];
 extern AnimationFrame D_us_801821F8[];
 extern AnimationFrame D_us_80182304[];
 extern AnimationFrame D_us_80182310[];
+extern AnimationFrame D_us_80182010[];
+extern AnimationFrame D_us_801820BC[];
 extern AnimationFrame D_us_80182078[];
 extern AnimationFrame D_us_80182094[];
 extern AnimationFrame D_us_80182324[];
@@ -194,7 +196,20 @@ void func_us_801B9D74(void) {
     BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, FACTORY(BP_SMOKE_PUFF, 5), 0);
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9DE4);
+void func_us_801B9DE4(void) {
+    if (g_Ric.timers[PL_T_8]) {
+        func_us_801B9D74();
+        return;
+    }
+    g_Ric.timers[PL_T_CURSE] = 8;
+    g_Ric.timers[PL_T_8] = 12;
+    g_Ric.timers[PL_T_CURSE] = 12;
+    g_Ric.unk44 = 0;
+    BO6_RicSetStep(PL_S_WALK);
+    BO6_RicSetAnimation(D_us_80182010);
+    BO6_RicSetSpeedX(0x14000);
+    RIC.velocityY = 0;
+}
 
 void func_us_801B9E70(void) {
     if (BO6_RicCheckFacing() || RIC.step == PL_S_SLIDE) {
@@ -215,7 +230,29 @@ void func_us_801B9E70(void) {
     RIC.velocityY = -0x4B000;
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetFall);
+void BO6_RicSetFall(void) {
+    if (g_Ric.prev_step != PL_S_RUN && g_Ric.prev_step != PL_S_SLIDE) {
+        RIC.velocityX = 0;
+    }
+    if (g_Ric.prev_step != PL_S_WALK && g_Ric.prev_step != PL_S_RUN) {
+        BO6_RicSetAnimation(D_us_801820BC);
+    }
+    if (g_Ric.prev_step == PL_S_RUN) {
+        g_Ric.unk44 = 0x10;
+    }
+    BO6_RicSetStep(PL_S_FALL);
+    RIC.velocityY = 0x20000;
+    g_Ric.timers[PL_T_5] = 8;
+    g_Ric.timers[PL_T_6] = 8;
+    g_Ric.timers[PL_T_CURSE] = 0;
+    g_Ric.timers[PL_T_8] = 0;
+    if (g_Ric.prev_step == PL_S_SLIDE) {
+        g_Ric.timers[PL_T_5] = g_Ric.timers[PL_T_6] = 0;
+        RIC.pose = 2;
+        RIC.poseTimer = 0x10;
+        RIC.velocityX /= 2;
+    }
+}
 
 void func_us_801BA050(void) {
     BO6_RicSetStep(PL_S_HIGHJUMP);
