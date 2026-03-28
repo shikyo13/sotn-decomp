@@ -11,6 +11,7 @@ extern AnimationFrame D_us_801821F8[];
 extern AnimationFrame D_us_80182304[];
 extern AnimationFrame D_us_80182310[];
 extern AnimationFrame D_us_80182010[];
+extern AnimationFrame D_us_8018221C[];
 extern AnimationFrame D_us_801820BC[];
 extern AnimationFrame D_us_80182078[];
 extern AnimationFrame D_us_80182094[];
@@ -28,7 +29,41 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
 void func_us_801B9338(void) {}
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9340);
+void func_us_801B9340(void) {
+    switch (RIC.step_s) {
+    case 0:
+        BO6_RicResetPose();
+        RIC.velocityY = -0x50000;
+        func_us_801B9ACC(-0xF000);
+        RIC.anim = D_us_8018221C;
+        g_api.PlaySfx(0x83E);
+        g_Ric.unk40 = 0x8166;
+        g_Ric.timers[PL_T_2] = 8;
+        BO6_RicCreateEntFactoryFromEntity(
+            g_CurrentEntity, FACTORY(BP_RIC_BLINK, 0x58), 0);
+        RIC.step_s++;
+        break;
+    case 1:
+        if (g_Ric.vram_flag & TOUCHING_CEILING) {
+            if (RIC.velocityY < -0x10000) {
+                RIC.velocityY = -0x10000;
+            }
+        }
+        if (BO6_RicCheckInput(0x20280)) {
+            RIC.step = 0x70;
+            RIC.step_s = 2;
+        }
+        break;
+    case 2:
+        DecelerateX(0x2000);
+        if (PLAYER.posX.i.hi - RIC.posX.i.hi <= 0) {
+            RIC.facingLeft = 1;
+        } else {
+            RIC.facingLeft = 0;
+        }
+        break;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B94CC);
 
