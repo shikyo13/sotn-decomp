@@ -122,7 +122,24 @@ INCLUDE_ASM(
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashHydroStorm);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_DebugShowWaitInfo);
+extern s32 D_us_801D087C;
+
+void BO6_DebugShowWaitInfo(const char* msg) {
+    s32 old;
+
+    g_CurrentBuffer = g_CurrentBuffer->next;
+    FntPrint(msg);
+    old = D_us_801D087C;
+    D_us_801D087C = old + 1;
+    if (old & 4) {
+        FntPrint("\no\n");
+    }
+    DrawSync(0);
+    VSync(0);
+    PutDrawEnv(&g_CurrentBuffer->draw);
+    PutDispEnv(&g_CurrentBuffer->disp);
+    FntFlush(-1);
+}
 
 void BO6_DebugInputWait(s32 arg0) {
     while (PadRead(0)) {
