@@ -50,7 +50,47 @@ void func_us_801C13A8(Entity* self) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityWhip);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityArmBrandishWhip);
+extern s16 D_us_801827F8[];
+extern s16 D_us_8018280C[];
+extern s16 D_us_80182820[];
+extern s16 D_us_80182834[];
+extern s16 D_us_80182848[];
+extern s16 D_us_8018285C[];
+extern s32 D_us_801D0874;
+
+void BO6_RicEntityArmBrandishWhip(Entity* entity) {
+    if (g_Ric.unk46 == 0) {
+        DestroyEntity(entity);
+        return;
+    }
+    entity->facingLeft = RIC.facingLeft;
+    if (entity->step == 0) {
+        entity->flags = 0x18000000;
+        entity->animSet = ANIMSET_OVL(3);
+        entity->unk5A = 0x24;
+        entity->palette = 0x8220;
+        entity->zPriority = RIC.zPriority + 2;
+    }
+    if (RIC.step == PL_S_CROUCH) {
+        if (RIC.facingLeft) {
+            entity->animCurFrame = D_us_8018280C[D_us_801D0874];
+        } else {
+            entity->animCurFrame = D_us_801827F8[D_us_801D0874];
+        }
+    } else if (RIC.step == PL_S_STAND) {
+        if (RIC.facingLeft) {
+            entity->animCurFrame = D_us_80182834[D_us_801D0874];
+        } else {
+            entity->animCurFrame = D_us_80182820[D_us_801D0874];
+        }
+    } else if (RIC.facingLeft) {
+        entity->animCurFrame = D_us_8018285C[D_us_801D0874];
+    } else {
+        entity->animCurFrame = D_us_80182848[D_us_801D0874];
+    }
+    entity->posX.val = RIC.posX.val;
+    entity->posY.val = RIC.posY.val;
+}
 
 extern s16 D_us_80182870[];
 // same as `ric` `func_80167964` except `g_Ric`/`g_Player` reference and lookup
@@ -1032,7 +1072,45 @@ void func_us_801C8618(Entity* self) {
 INCLUDE_ASM(
     "boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashReboundStoneExplosion);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashReboundStone);
+void BO6_RicEntityCrashReboundStone(Entity* entity) {
+    switch (entity->step) {
+    case 0:
+        entity->flags = FLAG_UNK_20000 | FLAG_KEEP_ALIVE_OFFCAMERA;
+        entity->step++;
+        entity->ext.timer.t = 0x14;
+        // fallthrough
+    case 1:
+        if (--entity->ext.timer.t) {
+            break;
+        }
+    case 3:
+    case 5:
+        BO6_RicCreateEntFactoryFromEntity(entity, BP_57, 0);
+        entity->step++;
+    case 2:
+    case 4:
+    case 6:
+        entity->ext.timer.t++;
+        if (entity->ext.timer.t > 10) {
+            entity->ext.timer.t = 0;
+            entity->posX.val = FIX(128.0);
+            entity->posY.val = 0;
+            BO6_RicCreateEntFactoryFromEntity(
+                entity, FACTORY(BP_EMBERS, 1), 0);
+            entity->step++;
+        }
+        break;
+    case 7:
+        entity->ext.timer.t++;
+        if (entity->ext.timer.t > 15) {
+            DestroyEntity(entity);
+            g_Ric.unk4E = 1;
+            BO6_RicCreateEntFactoryFromEntity(
+                entity, BP_CRASH_REBOUND_STONE_EXPLOSION, 0);
+        }
+        break;
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashBibleBeam);
 
