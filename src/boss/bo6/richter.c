@@ -6,6 +6,10 @@ extern s32 D_us_801CF3CC;
 extern AnimationFrame D_us_801820B0[];
 extern s32 D_us_801D07F8;
 extern AnimationFrame D_us_80181F24[];
+extern EInit D_us_80180400;
+extern s16 D_us_801D1686;
+extern s32 D_us_801CF3E0;
+extern s32 D_us_801CF3E4;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -49,7 +53,34 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", RichterThinking);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B6998);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", EntityRichter);
+void EntityRichter(Entity* self) {
+    Entity* entity;
+    s16 i;
+
+    g_Ric.unk6A = RIC.hitPoints;
+    if (self->step == 0) {
+        InitializeEntity(&D_us_80180400);
+        func_us_801B4BD0();
+        entity = &g_Entities[STAGE_ENTITY_START + 4];
+        for (i = STAGE_ENTITY_START + 4; i < 0x90; i++, entity++) {
+            DestroyEntity(entity);
+        }
+        D_us_801D1686 = RIC.hitPoints;
+        D_us_801CF3E0 = 0;
+        g_Ric.unk6C = RIC.hitPoints;
+        g_Ric.unk6A = RIC.hitPoints;
+        g_Ric.unk70 = RIC.hitboxState;
+        D_us_801CF3E4 = (u16)D_us_801D1686 >> 1;
+        func_us_801B5A14(0x12);
+        BO6_DisableAfterImage(1, 0x30);
+    } else {
+        RichterThinking();
+        BO6_RicMain();
+        func_us_801BBBD0();
+        func_us_801B6998();
+    }
+    g_Ric.unk6C = g_Ric.unk6A;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepStand);
 
