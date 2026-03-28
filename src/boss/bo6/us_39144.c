@@ -10,6 +10,7 @@ extern AnimationFrame D_us_801822D8[];
 extern AnimationFrame D_us_801821F8[];
 extern AnimationFrame D_us_80182304[];
 extern AnimationFrame D_us_80182310[];
+extern AnimationFrame D_us_80182324[];
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
@@ -117,7 +118,31 @@ void BO6_RicSetInvincibilityFrames(s32 kind, s16 invincibilityFrames) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_DisableAfterImage);
+void BO6_DisableAfterImage(s32 resetAnims, s32 arg1) {
+    Primitive* prim;
+
+    if (resetAnims) {
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+            .ext.disableAfterImage.resetFlag = 1;
+        g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].animCurFrame =
+            g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_2].animCurFrame =
+                g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_3].animCurFrame =
+                    0;
+        prim = &g_PrimBuf
+            [g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].primIndex];
+        while (prim) {
+            prim->x1 = 0;
+            prim = prim->next;
+        }
+    }
+    g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+        .ext.disableAfterImage.disableFlag = 1;
+    g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1]
+        .ext.disableAfterImage.index = MaxAfterImageIndex;
+    if (arg1) {
+        g_Ric.timers[PL_T_AFTERIMAGE_DISABLE] = 4;
+    }
+}
 
 void func_us_801B9C14(void) {
     g_Entities[STAGE_ENTITY_START + E_AFTERIMAGE_1].ext.afterImage.disableFlag =
@@ -172,7 +197,18 @@ INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9E70);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicSetFall);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BA050);
+void func_us_801BA050(void) {
+    BO6_RicSetStep(PL_S_HIGHJUMP);
+    RIC.velocityX = 0;
+    BO6_RicSetSpeedX(0x14000);
+    RIC.velocityY = -0x78000;
+    g_Ric.high_jump_timer = 0;
+    BO6_RicSetAnimation(D_us_80182324);
+    func_us_801B9C14();
+    BO6_RicCreateEntFactoryFromEntity(g_CurrentEntity, BP_HIGH_JUMP, 0);
+    g_api.PlaySfx(SFX_BOSS_RIC_ATTACK_B);
+    g_Ric.timers[PL_T_12] = 4;
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicCheckSubwpnChainLimit);
 
