@@ -16,6 +16,7 @@ extern AnimationFrame D_us_80182078[];
 extern AnimationFrame D_us_80182094[];
 extern AnimationFrame D_us_80182324[];
 extern AnimationFrame D_us_80182360[];
+extern EInit D_us_8018043C;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801B9144);
 
@@ -379,7 +380,32 @@ Entity* BO6_RicCreateEntFactoryFromEntity(
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", BO6_RicEntityFactory);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BC2F0);
+void func_us_801BC2F0(Entity* self) {
+    if (RIC.step != PL_S_SLIDE) {
+        DestroyEntity(self);
+        return;
+    }
+    self->posX.i.hi = RIC.posX.i.hi;
+    self->posY.i.hi = RIC.posY.i.hi;
+    self->facingLeft = RIC.facingLeft;
+    if (!self->step) {
+        InitializeEntity(&D_us_8018043C);
+        self->ext.ILLEGAL.u16[0] = self->hitboxState;
+        self->flags = 0x18000000;
+        self->hitboxOffX = 0x14;
+        self->hitboxOffY = 0xC;
+        self->hitboxWidth = 9;
+        self->hitboxHeight = 9;
+        self->step = 1;
+    }
+    self->hitboxState = self->ext.ILLEGAL.u16[0];
+    if (RIC.pose < 2) {
+        self->hitboxState = 0;
+    }
+    if (RIC.pose >= 8) {
+        DestroyEntity(self);
+    }
+}
 
 INCLUDE_ASM("boss/bo6/nonmatchings/us_39144", func_us_801BC3E0);
 
