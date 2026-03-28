@@ -23,6 +23,8 @@ extern AnimationFrame D_us_8018224C[];
 extern AnimationFrame D_us_80182224[];
 extern AnimationFrame D_us_8018228C[];
 extern AnimationFrame D_us_8018221C[];
+extern s32 D_us_80181278;
+extern s32 D_us_801D11C0;
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B4BD0);
 
@@ -85,7 +87,47 @@ void func_us_801B5A14(s32 arg0) {
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", RichterThinking);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", func_us_801B6998);
+void func_us_801B6998(void) {
+    s32 timer = D_us_80181278;
+
+    switch (timer) {
+    case 0x0A:
+        if (g_CastleFlags[0x95] != 0) {
+            break;
+        }
+        if (g_DemoMode) {
+            break;
+        }
+        g_unkGraphicsStruct.g_zEntityCenter = 1;
+        D_us_801D11C0 = 0;
+        break;
+    case 0x0B:
+        D_us_801D11C0++;
+        if (D_us_801D11C0 < 2) {
+            return;
+        }
+        if (g_CastleFlags[0x95] != 0) {
+            break;
+        }
+        if (g_DemoMode) {
+            break;
+        }
+        g_unkGraphicsStruct.unk20 = 0xFF;
+        break;
+    case 0x14:
+        if (!(g_CutsceneFlags & 4)) {
+            return;
+        }
+        D_us_80181278 = 0x1E;
+        return;
+    case 0x28:
+        g_CutsceneFlags |= 8;
+        return;
+    default:
+        return;
+    }
+    D_us_80181278++;
+}
 
 void EntityRichter(Entity* self) {
     Entity* entity;
