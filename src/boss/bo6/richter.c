@@ -178,7 +178,29 @@ INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepSlide);
 
 INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepSlideKick);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/richter", BO6_RicStepBladeDash);
+void BO6_RicStepBladeDash(void) {
+    DecelerateX(0x1C00);
+
+    if (RIC.poseTimer < 0) {
+        g_Ric.unk46 = 0;
+        BO6_RicSetStand(0);
+    } else if (RIC.pose >= 0x12 && !(g_Ric.vram_flag & TOUCHING_GROUND)) {
+        g_Ric.unk46 = 0;
+        BO6_RicSetFall();
+    } else {
+        if (!(g_GameTimer & 3) && RIC.pose < 0x12 &&
+            g_Ric.vram_flag & TOUCHING_GROUND) {
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, FACTORY(BP_SLIDE, 2), 0);
+        }
+
+        if (RIC.pose == 18 && RIC.poseTimer == 1 &&
+            (g_Ric.vram_flag & TOUCHING_GROUND)) {
+            BO6_RicCreateEntFactoryFromEntity(
+                g_CurrentEntity, BP_SKID_SMOKE, 0);
+        }
+    }
+}
 
 void func_us_801B8E80(s32 arg0) {
     s16 xOff;
