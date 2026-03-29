@@ -241,7 +241,111 @@ void func_us_801C2784(void) {}
 INCLUDE_ASM(
     "boss/bo6/nonmatchings/us_3E79C", BO6_RicEntitySubwpnHolyWaterBreakGlass);
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashHydroStorm);
+extern EInit D_us_80180484;
+extern s16 g_Ric_timers_3;
+extern s16 D_us_801D1666;
+
+void BO6_RicEntityCrashHydroStorm(Entity* self) {
+    PrimLineG2* line;
+    s16 primcount;
+    s32 i;
+
+    if (self->params < 24) {
+        primcount = 32;
+    } else {
+        primcount = 33 - (self->params - 32) * 2;
+    }
+
+    switch (self->step) {
+    case 0:
+        self->primIndex = g_api.AllocPrimitives(PRIM_LINE_G2, primcount);
+        if (self->primIndex == -1) {
+            DestroyEntity(self);
+            return;
+        }
+        self->ext.subweapon.subweaponId = PL_W_HYDROSTORM;
+        InitializeEntity(D_us_80180484);
+        self->posX.i.hi = 128;
+        self->posY.i.hi = 112;
+        self->hitboxWidth = 120;
+        self->hitboxHeight = 120;
+        self->facingLeft = 0;
+        line = (PrimLineG2*)&g_PrimBuf[self->primIndex];
+        self->flags |= FLAG_UNK_10000000 | FLAG_HAS_PRIMS;
+        while (line != NULL) {
+            line->r0 = 0x1F;
+            line->g0 = 0x1F;
+            line->b0 = 0x30;
+            line->r1 = 0x3F;
+            line->g1 = 0x50;
+            line->b1 = 0x7F;
+            line->x0 = rand() & 0x1FF;
+            line->x1 = line->x0;
+            line->y0 = -(rand() & 0xF);
+            line->y1 = line->y0;
+            line->preciseX.i.hi = line->x1;
+            line->preciseY.i.hi = line->y1;
+            line->velocityX.val = -(rcos(0xB80) * -16) * 12;
+            line->velocityY.val = -(rsin(0xB80) * 16) * 12;
+            line->timer = 0;
+            line->delay = (rand() & 0xF) + 12;
+            if (rand() & 1) {
+                line->priority = RIC.zPriority + 2;
+            } else {
+                line->priority = RIC.zPriority - 2;
+            }
+            line->drawMode = DRAW_TPAGE2 | DRAW_TPAGE | DRAW_TRANSP;
+            line = line->next;
+        }
+        if (self->params == 1) {
+            g_api.SetFadeMode(FADE_BLUE_TINT);
+        }
+        self->ext.subweapon.timer = 0x160;
+        if ((self->params < 16) && !(self->params & 3)) {
+            g_api.PlaySfx(SFX_BOSS_RIC_HYDRO_STORM_RAIN);
+        }
+        self->step = 1;
+        break;
+    case 1:
+        line = (PrimLineG2*)&g_PrimBuf[self->primIndex];
+        for (i = 0; line != NULL; i++, line = line->next) {
+            if (line->timer == 0) {
+                line->preciseX.i.hi = line->x1;
+                line->preciseY.i.hi = line->y1;
+                line->preciseX.val += line->velocityX.val;
+                line->preciseY.val += line->velocityY.val;
+                line->x1 = line->preciseX.i.hi;
+                line->y1 = line->preciseY.i.hi;
+                if (line->y1 > line->delay) {
+                    line->timer++;
+                    line->xLength = line->x0 - line->x1;
+                    line->yLength = line->y0 - line->y1;
+                }
+            } else {
+                line->preciseX.i.hi = line->x1;
+                line->preciseY.i.hi = line->y1;
+                line->preciseX.val += line->velocityX.val;
+                line->preciseY.val += line->velocityY.val;
+                line->x1 = line->preciseX.i.hi;
+                line->y1 = line->preciseY.i.hi;
+                line->y0 = line->y1 + line->yLength;
+                line->x0 = line->x1 + line->xLength;
+                if (line->y0 >= 0xD8) {
+                    self->step = 2;
+                }
+            }
+        }
+        self->ext.subweapon.timer++;
+        break;
+    case 2:
+        if (self->params == 0x18) {
+            D_us_801D1666 = 1;
+        }
+        DestroyEntity(self);
+        break;
+    }
+    g_Ric_timers_3 = 16;
+}
 
 extern s32 D_us_801D087C;
 
