@@ -1193,7 +1193,90 @@ void BO6_RicEntityVibhutiCrashCloud(Entity* self) {
     }
 }
 
-INCLUDE_ASM("boss/bo6/nonmatchings/us_3E79C", BO6_RicEntityCrashVibhuti);
+void BO6_RicEntityCrashVibhuti(Entity* self) {
+    FakePrim* prim;
+    s32 angle;
+    s32 magnitude;
+    s32 i;
+
+    switch (self->step) {
+    case 0:
+        self->primIndex = g_api.AllocPrimitives(PRIM_TILE, 9);
+        if (self->primIndex == -1) {
+            DestroyEntity(self);
+            D_us_801D1666 = 1;
+            return;
+        }
+        self->flags = FLAG_UNK_10000000 | FLAG_HAS_PRIMS;
+        prim = (FakePrim*)&g_PrimBuf[self->primIndex];
+        for (i = 0; i < 9; i++) {
+            prim->r0 = prim->g0 = prim->b0 = 0xFF;
+            prim->w = prim->h = 1;
+            prim->priority = RIC.zPriority + 8;
+            prim->drawMode = DRAW_HIDE | DRAW_UNK02;
+            prim = prim->next;
+        }
+        self->step++;
+        break;
+    case 1:
+        self->ext.vibhutiCrash.unk7E++;
+        if (!(self->ext.vibhutiCrash.unk7E % 2) &&
+            self->ext.vibhutiCrash.timer < 8) {
+            self->ext.vibhutiCrash.timer++;
+            self->ext.vibhutiCrash.unk80++;
+            if (self->ext.vibhutiCrash.unk80 >= 0x30) {
+                self->step++;
+            }
+            prim = (FakePrim*)&g_PrimBuf[self->primIndex];
+            for (i = 0; i < 9; i++) {
+                if (prim->drawMode & DRAW_HIDE) {
+                    break;
+                }
+                prim = prim->next;
+            }
+            prim->posX.val = RIC.posX.val;
+            prim->posY.val = RIC.posY.val - FIX(24);
+            angle = rand() % 0x200 + 0x300;
+            magnitude = (rand() % 24) + 0x20;
+            prim->velocityX.val = (rcos(angle) * magnitude);
+            prim->velocityY.val = -(rsin(angle) * magnitude);
+            prim->drawMode &= ~DRAW_HIDE;
+            prim->delay = 0x10;
+        }
+        // fallthrough
+    case 2:
+        prim = (FakePrim*)&g_PrimBuf[self->primIndex];
+        for (i = 0; i < 9; i++) {
+            if (!(prim->drawMode & DRAW_HIDE)) {
+                if (!--prim->delay) {
+                    prim->drawMode |= DRAW_HIDE;
+                    self->ext.vibhutiCrash.timer--;
+                    self->ext.vibhutiCrash.x = prim->posX.val;
+                    self->ext.vibhutiCrash.y = prim->posY.val;
+                    self->ext.vibhutiCrash.facing =
+                        (prim->velocityX.val < 1);
+                    BO6_RicCreateEntFactoryFromEntity(
+                        self, BP_VITHUBI_CRASH_CLOUD, 0);
+                } else {
+                    prim->posX.val += prim->velocityX.val;
+                    prim->posY.val += prim->velocityY.val;
+                    prim->velocityY.val += FIX(0.25);
+                    prim->x0 = prim->posX.i.hi;
+                    prim->y0 = prim->posY.i.hi;
+                }
+            }
+            prim = prim->next;
+        }
+        if (self->step == 2 && !self->ext.vibhutiCrash.timer) {
+            self->step++;
+        }
+        break;
+    case 3:
+        D_us_801D1666 = 1;
+        DestroyEntity(self);
+        break;
+    }
+}
 
 void func_us_801C8590(Entity* self) {
     switch (self->step) {
